@@ -1,5 +1,5 @@
 import wx
-import m_controller as m_ctrl
+import controller as m_ctrl
 
 
 
