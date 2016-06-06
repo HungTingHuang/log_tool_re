@@ -5,8 +5,29 @@ import os
 import view
 import model
 import threading
+import sys
 
 
+class HugeTableGrid(wx.grid.Grid):
+    def __init__(self, parent, title, data, rows, cols):
+        wx.grid.Grid.__init__(self, parent, -1)
+        
+        table = model.HugeTable(title, data, rows, cols)
+        
+        self.SetTable(table, True)
+        
+        
+        self.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK, self.OnRightDown)
+    '''
+    def SetReadOnly(self, *args, **kwargs):
+        return True
+    '''
+    
+        
+        
+    
+    def OnRightDown(self, e):
+        print 'hello'
 
 class Controller:
     def __init__(self, app):
@@ -15,7 +36,7 @@ class Controller:
         
         #grid parameter
         self.grid_max_colume_number = 0
-        self.grid_max_row_number = 4096
+        self.grid_max_row_number = 8192
         
         #event bind
         self.m_view.Bind(wx.EVT_DIRPICKER_CHANGED, self.OnDirSelected, self.m_view.m_dirpicker)
@@ -47,15 +68,15 @@ class Controller:
         if os.path.isdir(itemPath):
             pass
         else:
-            sql = model.Sqlite()
-            if sql.is_sqlite_file(itemPath):
+            _sql = model.Sqlite()
+            if _sql.is_sqlite_file(itemPath):
                 parse = model.LogParse()
                 projName = parse.find_current_project(itemPath)
                 self.m_view.m_statusBar.SetStatusText(projName)
-                title = sql.get_col_name(itemPath, '')
                 
-                data = sql.get_data_repeat(itemPath, self.grid_max_row_number)
-                self.mAddGridPage(projName, title, data, self.grid_max_row_number, len(title))
+                _model = model.Model()
+                data = _model.SetDataToGrid(itemPath, self.grid_max_row_number)
+                self.mAddGridPage(projName, data[0], data, self.grid_max_row_number, len(data[0]))
         pass
     
     def OnItemExpanded(self, evt):
@@ -103,18 +124,30 @@ class Controller:
         mParent = self.m_view.m_auimanager
         mPanel = wx.Panel(mParent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
         Panel_Sizer = wx.BoxSizer(wx.VERTICAL)
+        
+       
+        
+        mGrid = HugeTableGrid(mPanel, col_title, data, row_size, col_size)
+       
+                
+        
+        '''
         mGrid = wx.grid.Grid(mPanel)
         mGrid.CreateGrid(row_size, col_size)
         
         for i in range(0, len(col_title)):
             mGrid.SetColLabelValue(i, col_title[i])
         
-        for col in range(col_size):
-            for row in range(row_size):
-                mGrid.SetCellValue(row, col, "%s"%data[row][col])
-                mGrid.SetReadOnly(row, col, True)
-            mGrid.AutoSizeColumn(col, True)
         
+        #data 0~1024 1025
+        for row in range(0, row_size): #0~1023
+            for col in range(0, len(data[row+1])):
+                mGrid.SetCellValue(row, col, "%s"%data[row+1][col])
+                #mGrid.SetReadOnly(row, col, True)
+                pass
+            mGrid.AutoSizeColumn(col, True)
+            pass
+        #'''
         Panel_Sizer.Add( mGrid, 1, wx.ALL|wx.EXPAND, 5 )
         mPanel.SetSizer(Panel_Sizer)
         mPanel.Layout()

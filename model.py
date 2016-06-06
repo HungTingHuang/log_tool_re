@@ -2,9 +2,56 @@
 import sqlite3 as lite
 import time
 from collections import OrderedDict
+import wx.grid as gridlib
 #import numpy
 
-
+class HugeTable(gridlib.PyGridTableBase):
+    
+    def __init__(self, title, data, rows, cols):
+        gridlib.PyGridTableBase.__init__(self)
+        self.title = title
+        self.data = data
+        
+        self.row_count = rows
+        self.col_count = cols
+        
+      
+        
+        self.ReadyOnly = gridlib.GridCellAttr()
+        self.ReadyOnly.SetReadOnly(True)
+        
+        pass
+    
+    def GetAttr(self, row, col, kind):
+        attr = self.ReadyOnly
+        attr.IncRef()
+        return attr
+    
+    
+    def GetColLabelValue(self, col):
+        return self.title[col]
+    
+    def GetNumberRows(self):
+        return self.row_count
+    
+    def GetNumberCols(self):
+        return self.col_count
+    
+    
+    def IsEmptyCell(self, row, col):
+        return False
+    
+    def GetValue(self, row, col):
+        if col >= len(self.data[row]) or row > self.row_count:
+            return ''
+        else:
+            return self.data[row][col]
+            pass
+    
+    def SetValue(self, row, col, value):
+        self.data.write('SetValue(%d, %d, "%s") ignored.\n' % (row, col, value))
+    
+    
 class Sqlite():
     def __init__(self):
         self.tableName = ''
@@ -63,7 +110,7 @@ class Sqlite():
             pass
         else:
             if not cmd:
-                cmd_t = 'SELECT * FROM %s LIMIT 1'%self.tableName      
+                cmd_t = 'SELECT * FROM %s LIMIT 1'%self.tableName
                 pass
             else:
                 pass  
@@ -107,6 +154,7 @@ class Sqlite():
     def get_data_repeat(self, filename, row_limit):
         data = list()
         if self.count == 0:#first call
+            print type(self.get_total_row_number(filename)[0][0])
             self.data_len = self.get_total_row_number(filename)[0][0]
         offset = self.count * row_limit
         if (self.data_len - offset) < row_limit:
@@ -147,6 +195,10 @@ class LogParse():
         
         self.emmem = 'HASP KEY CHECK : SUCCESS'
     
+    def find_table_col_name(self, filename, cmd):
+        return self.sqlite.get_col_name(filename, cmd)
+        pass
+    
     def find_current_project(self, filename):
         cmd = 'SELECT %s FROM %s LIMIT 1'%(self.id_token, self.tableName)
         data = self.sqlite.execute_command(filename, cmd)[0]
@@ -177,7 +229,7 @@ class LogParse():
         pass
     '''
     def find_mp_message(self, msg):
-        if len(msg) > 256:
+        if len(msg) > 512:
             return True
         else:
             return False
@@ -235,10 +287,13 @@ class LogParse():
                 result_data = mp_message.partition(sep)
             else:
                 pass
-            result_data = result_data[0].replace(':', ';').replace(" ","")+sep+result_data[2].replace(',', ' ')
+            result_data = result_data[0].replace(':', ';').replace("'", ';').replace(" ","")+sep+result_data[2].replace(',', ' ')
             result_data = result_data + ';'
             pass
         return result_data
+        pass
+    
+    def get_title(self):
         pass
     
     def timestamp_convert(self, ts):
@@ -256,8 +311,10 @@ class Model():
         self.sqlite.tableName = self.log.tableName    
 
     def SetDataToGrid(self, filename, row_limit):
+        first_append_title = True
         data = [[] for _ in range(row_limit+1)]
         title = self.sqlite.get_col_name(filename, '')
+        mp_message = ''
         
         for item in title:
             data[0].append(item)
@@ -265,8 +322,8 @@ class Model():
         iter = data[0].index('ts')
         data[0][iter] = 'timestamp'
         iter +=1
-        data[0].insert(iter, 'day')
-        iter +=1
+        #data[0].insert(iter, 'day')
+        #iter +=1
         data[0].insert(iter, 'time')
         iter +=1
         data[0].insert(iter, 'ms')
@@ -285,23 +342,29 @@ class Model():
             data[row_count].append(row[2])
             data[row_count].append(row[3])
             data[row_count].append(row[4])
-            data[row_count].append(row[5])
+            if self.log.find_mp_message(row[5]):
+                mp_message = self.log.mp_message_standardize(row[5])
+                mp_message = self.log.mp_message_parse(mp_message)#return OrderedDict()
+                if first_append_title:
+                    for keys in mp_message:
+                        data[0].append(keys)
+                    first_append_title = False
+                    pass
+                data[row_count].append('')
+                for key in mp_message:
+                    data[row_count].append(mp_message[key])
+                    pass
+            else:
+                data[row_count].append(row[5])
+                pass    
             row_count += 1
-            
-        print data
-        
-        
-        
-        
-        
-        
-        
+        return data    
         pass
 
 
         #self, sql_name, col_limit, 
     def GetDataOnItemActivated(self, sql_name, row_limit):
-                
+        
         
         
         pass

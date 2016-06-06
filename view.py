@@ -1,7 +1,11 @@
 #wxPython
 import wx
+import wx.grid
 import wx.aui
+
 import EnhancedStatusBar as statusBar
+
+
 
 
 
