@@ -18,12 +18,6 @@ class HugeTableGrid(wx.grid.Grid):
         
         
         self.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK, self.OnRightDown)
-    '''
-    def SetReadOnly(self, *args, **kwargs):
-        return True
-    '''
-    
-        
         
     
     def OnRightDown(self, e):
@@ -45,7 +39,9 @@ class Controller:
         self.m_view.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.OnItemExpanding, self.m_view.m_treectrl)
         self.m_view.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated, self.m_view.m_treectrl)
         self.m_view.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.OnItemCollapsed, self.m_view.m_treectrl)
-
+        
+        #notebook_panel_01
+        self.m_view.Bind(wx.EVT_CHECKBOX, self.OnNPcheckBox, self.m_view.m_np1_checkBox_01)
 
         self.m_view.Show()
         
@@ -103,7 +99,18 @@ class Controller:
             pass
         pass
     
-    
+    def OnNPcheckBox(self, evt):
+        if evt.IsChecked():
+            self.m_view.m_np1_staticText_01.Enable()
+            self.m_view.m_np1_choice_03.Enable()
+            self.m_view.m_np1_choice_04.Enable()
+            pass
+        else:
+            self.m_view.m_np1_staticText_01.Disable()
+            self.m_view.m_np1_choice_03.Disable()
+            self.m_view.m_np1_choice_04.Disable()
+            pass
+        pass
     
     #@staticmethod
     def mGetPathOnItem(self, item):
