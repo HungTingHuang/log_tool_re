@@ -332,16 +332,16 @@ class View(wx.Frame):
         for mm in range(0, 60):
             m_choice_mm.append('%s min'%mm)
         
-        m_choice1 = wx.Choice( notebook.panel_01, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_hr, wx.NO_BORDER )
-        m_choice1.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_MENU ) )
-        m_choice1.SetSelection( 0 )
-        notebook.panel_01.fgSizer_2.Add( m_choice1, 0, wx.ALIGN_CENTER_VERTICAL, 5 )
+        notebook.panel_01.choice1 = wx.Choice( notebook.panel_01, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_hr, wx.NO_BORDER )
+        notebook.panel_01.choice1.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_MENU ) )
+        notebook.panel_01.choice1.SetSelection( 0 )
+        notebook.panel_01.fgSizer_2.Add( notebook.panel_01.choice1, 0, wx.ALIGN_CENTER_VERTICAL, 5 )
         
         
-        m_choice2 = wx.Choice( notebook.panel_01, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_mm, wx.NO_BORDER )
-        m_choice2.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_MENU ) )
-        m_choice2.SetSelection( 0 )
-        notebook.panel_01.fgSizer_2.Add( m_choice2, 0, wx.ALIGN_CENTER_VERTICAL, 5 )
+        notebook.panel_01.choice2 = wx.Choice( notebook.panel_01, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_mm, wx.NO_BORDER )
+        notebook.panel_01.choice2.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_MENU ) )
+        notebook.panel_01.choice2.SetSelection( 0 )
+        notebook.panel_01.fgSizer_2.Add( notebook.panel_01.choice2, 0, wx.ALIGN_CENTER_VERTICAL, 5 )
         
         notebook.panel_01.fgSizer_2.AddSpacer( ( 15, 0), 0, 0, 5 )
         
@@ -369,8 +369,8 @@ class View(wx.Frame):
         vSizer_panel_01.Add(notebook.panel_01.fgSizer_2, 0, 0, 5)
         
         notebook.panel_01.vSizer = wx.BoxSizer( wx.VERTICAL )
-        m_button_query = wx.Button( notebook.panel_01, wx.ID_ANY, u"send", wx.DefaultPosition, wx.Size(60, 15), 0 )
-        notebook.panel_01.vSizer.Add( m_button_query, 1, wx.ALIGN_RIGHT, 5 )
+        notebook.panel_01.button_01 = wx.Button( notebook.panel_01, wx.ID_ANY, u"send", wx.DefaultPosition, wx.Size(60, 15), 0 )
+        notebook.panel_01.vSizer.Add( notebook.panel_01.button_01, 1, wx.ALIGN_RIGHT, 5 )
         vSizer_panel_01.Add( notebook.panel_01.vSizer, 1, wx.ALIGN_RIGHT, 5 )
         
         
@@ -472,7 +472,7 @@ class View(wx.Frame):
         self.Layout()
         
         status_bar = EnhancedStatusBar(self, -1)
-        status_bar.SetFieldsCount(2)
+        status_bar.SetFieldsCount(3)
         self.SetStatusBar(status_bar)
         
         menubar = wx.MenuBar(0)
@@ -492,8 +492,11 @@ class View(wx.Frame):
         
         self.m_np1_checkBox_01 = notebook.panel_01.checkBox
         self.m_np1_staticText_01 = notebook.panel_01.staticText_1
+        self.m_np1_choice_01 = notebook.panel_01.choice1
+        self.m_np1_choice_02 = notebook.panel_01.choice2
         self.m_np1_choice_03 = notebook.panel_01.choice3
         self.m_np1_choice_04 = notebook.panel_01.choice4
+        self.m_np1_button_01 = notebook.panel_01.button_01
         #self.m_active_proj = notebook.panel_01.active_proj
         #self.m_sql_command = notebook.panel_01.sql_command
         self.m_statusBar = status_bar

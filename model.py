@@ -1,6 +1,8 @@
 #m_model
 import sqlite3 as lite
 import time
+from datetime import datetime, date
+import calendar
 from collections import OrderedDict
 import wx.grid as gridlib
 #import numpy
@@ -27,7 +29,10 @@ class HugeTable(gridlib.PyGridTableBase):
         attr.IncRef()
         return attr
     
-    
+    '''
+    def GetRowLabelValue(self, row):
+        return 'fuck'
+    #'''
     def GetColLabelValue(self, col):
         return self.title[col]
     
@@ -68,15 +73,13 @@ class Sqlite():
         pass
     
     def is_sqlite_file(self, filename):
-        try:
-            con = lite.connect(filename)
-        except lite.Error, e:
+        if filename == filename.split('.')[0]:
             return False
-        finally:
-            if not con:
-                return False
-            else:
+        else:
+            if 'db' == filename.split('.')[1]:
                 return True
+            else:
+                return False
         pass
      
     
@@ -198,7 +201,12 @@ class LogParse():
     def find_table_col_name(self, filename, cmd):
         return self.sqlite.get_col_name(filename, cmd)
         pass
-    
+    def find_current_project_daytime(self, filename):
+        cmd = 'SELECT ts FROM %s LIMIT 1'%self.tableName
+        timestamp = self.sqlite.execute_command(filename, cmd)[0][0]
+        return time.strftime('%Y-%m-%d', time.gmtime(timestamp/1000000))
+        
+        
     def find_current_project(self, filename):
         cmd = 'SELECT %s FROM %s LIMIT 1'%(self.id_token, self.tableName)
         data = self.sqlite.execute_command(filename, cmd)[0]
@@ -219,6 +227,8 @@ class LogParse():
             self.curProj = 'SSM_Trex'
         elif self.ssm_xride in data[0]:
             self.curProj = 'SSM_xRide'
+        elif self.ssm_balloon in data[0]:
+            self.curProj = 'SSM_Balloon'
         else:
             self.curProj = 'unknow'
 
@@ -229,7 +239,7 @@ class LogParse():
         pass
     '''
     def find_mp_message(self, msg):
-        if len(msg) > 512:
+        if len(msg) > 320:
             return True
         else:
             return False
@@ -304,13 +314,106 @@ class LogParse():
         return _t
         pass
     
+    def unixtime_covert(self, year, mon, day, hr, mm, ss):
+        _d = datetime(year, mon, day, hr, mm, ss)
+        return calendar.timegm(_d.timetuple())
+        pass
+    
 class Model():
     def __init__(self):
         self.sqlite = Sqlite()
         self.log = LogParse()
-        self.sqlite.tableName = self.log.tableName    
+        self.sqlite.tableName = self.log.tableName
+        
+        
+    
+    def GetTimeRangeData(self, filename, hl, ll):
+        hl = str(hl)
+        hl = hl[::-1].replace(hl[len(hl)-1][::-1], '%'[::-1], 1)[::-1]
+        
+        ll = str(ll)
+        ll = ll[::-1].replace(ll[len(ll)-1][::-1], '%'[::-1], 1)[::-1]
+        
+        cmd_hl = "SELECT * FROM %s WHERE ts LIKE '%s' ORDER BY ts DESC LIMIT 1"%(self.log.tableName, hl)
+        cmd_ll = "SELECT * FROM %s WHERE ts LIKE '%s' ORDER BY ts ASC LIMIT 1"%(self.log.tableName, ll)
+        
+        data_hl = self.sqlite.execute_command(filename, cmd_hl)
+        data_ll = self.sqlite.execute_command(filename, cmd_ll)
+        
 
-    def SetDataToGrid(self, filename, row_limit):
+        if len(data_hl) == 1 and len(data_ll) == 1:
+            ts_hl = self.sqlite.execute_command(filename, cmd_hl)[0][0]
+            ts_ll = self.sqlite.execute_command(filename, cmd_ll)[0][0]
+
+            cmd_range = "SELECT * FROM %s WHERE ts BETWEEN %s AND %s ORDER BY ts ASC"%(self.log.tableName, ts_ll, ts_hl)
+            row_data = self.sqlite.execute_command(filename, cmd_range)
+            data = self.SetData(filename, row_data)    
+            return data
+        else:
+            return None
+            pass
+        pass    
+    
+    def SetData(self, filename, row_data):
+        first_append_title = True
+        data = [[] for _ in range(len(row_data)+1)]
+        title = self.sqlite.get_col_name(filename, '')
+        
+        mp_message = ''
+        for item in title:
+            data[0].append(item)
+        
+        iter = data[0].index('ts')
+        data[0][iter] = 'timestamp'
+        iter +=1
+        #data[0].insert(iter, 'day')
+        #iter +=1
+        data[0].insert(iter, 'time')
+        iter +=1
+        data[0].insert(iter, 'ms')
+        data[0][data[0].index('msg')] = 'mc_log'
+        
+        row_count = 1
+        for row in row_data:
+            data[row_count].append(row[0])
+            #data[row_count].append(self.log.timestamp_convert(row[0])['day'])
+            data[row_count].append(self.log.timestamp_convert(row[0])['time'])
+            data[row_count].append(self.log.timestamp_convert(row[0])['ms'])
+            data[row_count].append(row[1])
+            data[row_count].append(row[2])
+            data[row_count].append(row[3])
+            data[row_count].append(row[4])
+            if self.log.find_mp_message(row[5]):
+                mp_message = self.log.mp_message_standardize(row[5])
+                mp_message = self.log.mp_message_parse(mp_message)#return OrderedDict()
+                if first_append_title:
+                    for keys in mp_message:
+                        data[0].append(keys)
+                    first_append_title = False
+                    pass
+                data[row_count].append('')
+                for key in mp_message:
+                    data[row_count].append(mp_message[key])
+                    pass
+            else:
+                data[row_count].append(row[5])
+                pass    
+            row_count += 1
+        return data
+        pass
+
+
+    def GetDataOnItemActivated(self, filename, row_limit):
+        cmd = "SELECT * FROM %s LIMIT %s"%(self.log.tableName, row_limit)
+        row_data = self.sqlite.execute_command(filename, cmd)
+        data = self.SetData(filename, row_data)
+        if len(row_data) < 1:
+            return None
+        else:
+            data = self.SetData(filename, row_data)
+            return data
+            
+        '''
         first_append_title = True
         data = [[] for _ in range(row_limit+1)]
         title = self.sqlite.get_col_name(filename, '')
@@ -330,6 +433,7 @@ class Model():
         data[0][data[0].index('msg')] = 'mc_log' 
         
         cmd = "SELECT * FROM %s LIMIT %s"%(self.log.tableName, row_limit)
+        #cmd = "SELECT * FROM %s"%self.log.tableName
         temp = self.sqlite.execute_command(filename, cmd)
         
         row_count = 1
@@ -358,15 +462,12 @@ class Model():
                 data[row_count].append(row[5])
                 pass    
             row_count += 1
-        return data    
+        '''
+        
         pass
 
 
         #self, sql_name, col_limit, 
-    def GetDataOnItemActivated(self, sql_name, row_limit):
-        
-        
-        
-        pass
+   
 
      
