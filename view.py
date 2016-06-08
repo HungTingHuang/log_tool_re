@@ -2,6 +2,7 @@
 import wx
 import wx.grid
 import wx.aui
+#import wx.lib.agw.aui as wx_aui
 
 #import EnhancedStatusBar as statusBar
 
@@ -472,8 +473,10 @@ class View(wx.Frame):
         self.Layout()
         
         status_bar = EnhancedStatusBar(self, -1)
-        status_bar.SetFieldsCount(3)
+        status_bar.SetFieldsCount(4)
         self.SetStatusBar(status_bar)
+        self.m_progress = wx.Gauge(status_bar, range=100)
+        status_bar.AddWidget(self.m_progress, pos=3, wx.EXPAND)
         
         menubar = wx.MenuBar(0)
         menu_01 = wx.Menu()

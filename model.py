@@ -5,6 +5,8 @@ from datetime import datetime, date
 import calendar
 from collections import OrderedDict
 import wx.grid as gridlib
+import xlrd
+#import xlsgrid
 #import numpy
 
 class HugeTable(gridlib.PyGridTableBase):
@@ -25,6 +27,7 @@ class HugeTable(gridlib.PyGridTableBase):
         pass
     
     def GetAttr(self, row, col, kind):
+        attr = None
         attr = self.ReadyOnly
         attr.IncRef()
         return attr
@@ -198,6 +201,9 @@ class LogParse():
         
         self.emmem = 'HASP KEY CHECK : SUCCESS'
     
+    def find_total_row_number(self, filename):
+        return self.sqlite.get_total_row_number(filename)[0][0]
+    
     def find_table_col_name(self, filename, cmd):
         return self.sqlite.get_col_name(filename, cmd)
         pass
@@ -324,7 +330,14 @@ class Model():
         self.sqlite = Sqlite()
         self.log = LogParse()
         self.sqlite.tableName = self.log.tableName
+    
+    
+    
+    def GetGridDataFromPage(self):
         
+        
+        
+        pass 
         
     
     def GetTimeRangeData(self, filename, hl, ll):
@@ -347,14 +360,14 @@ class Model():
 
             cmd_range = "SELECT * FROM %s WHERE ts BETWEEN %s AND %s ORDER BY ts ASC"%(self.log.tableName, ts_ll, ts_hl)
             row_data = self.sqlite.execute_command(filename, cmd_range)
-            data = self.SetData(filename, row_data)    
+            data = self.SetDataToGrid(filename, row_data)    
             return data
         else:
             return None
             pass
         pass    
     
-    def SetData(self, filename, row_data):
+    def SetDataToGrid(self, filename, row_data):
         first_append_title = True
         data = [[] for _ in range(len(row_data)+1)]
         title = self.sqlite.get_col_name(filename, '')
@@ -405,12 +418,13 @@ class Model():
 
     def GetDataOnItemActivated(self, filename, row_limit):
         cmd = "SELECT * FROM %s LIMIT %s"%(self.log.tableName, row_limit)
+        #cmd = "SELECT * FROM %s"%self.log.tableName
         row_data = self.sqlite.execute_command(filename, cmd)
-        data = self.SetData(filename, row_data)
+        data = self.SetDataToGrid(filename, row_data)
         if len(row_data) < 1:
             return None
         else:
-            data = self.SetData(filename, row_data)
+            data = self.SetDataToGrid(filename, row_data)
             return data
             
         '''

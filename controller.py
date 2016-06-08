@@ -2,6 +2,7 @@
 import wx
 import wx.grid
 import wx.aui
+#import wx.lib.agw.aui as wx_aui
 import os
 import view
 import model
@@ -15,15 +16,126 @@ class HugeTableGrid(wx.grid.Grid):
         
         table = model.HugeTable(title, data, rows, cols)
         self.SetTable(table, True)
-        
+        self.Bind(wx.EVT_KEY_DOWN, self.OnKey)
         self.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK, self.OnCellRightDown)
         self.Bind(wx.grid.EVT_GRID_LABEL_LEFT_DCLICK, self.OnLabelDClick)
-        
+    
+    def OnKey(self, event):
+        # If Ctrl+C is pressed...
+        if event.ControlDown() and event.GetKeyCode() == 67:
+            self.copy()
+        # If Ctrl+V is pressed...
+        if event.ControlDown() and event.GetKeyCode() == 86:
+            self.paste('clip')
+        # If Ctrl+Z is pressed...
+        if event.ControlDown() and event.GetKeyCode() == 90:
+            if self.data4undo[2] != '':
+                self.paste('undo')
+        # If del is pressed...
+        if event.GetKeyCode() == 127:
+            # Call delete method
+            self.delete()
+        # Skip other Key events
+        if event.GetKeyCode():
+            event.Skip()
+            return
+    def copy(self):
+        # Number of rows and cols
+        #print self.GetSelectionBlockBottomRight()
+        #print self.GetGridCursorRow()
+        #print self.GetGridCursorCol()
+        if self.GetSelectionBlockTopLeft() == []:
+            rows = 1
+            cols = 1
+            iscell = True
+        else:
+            rows = self.GetSelectionBlockBottomRight()[0][0] - self.GetSelectionBlockTopLeft()[0][0] + 1
+            cols = self.GetSelectionBlockBottomRight()[0][1] - self.GetSelectionBlockTopLeft()[0][1] + 1
+            iscell = False
+        # data variable contain text that must be set in the clipboard
+        data = ''
+        # For each cell in selected range append the cell value in the data variable
+        # Tabs '\t' for cols and '\r' for rows
+        for r in range(rows):
+            for c in range(cols):
+                if iscell:
+                    data += str(self.GetCellValue(self.GetGridCursorRow() + r, self.GetGridCursorCol() + c))
+                else:
+                    data += str(self.GetCellValue(self.GetSelectionBlockTopLeft()[0][0] + r, self.GetSelectionBlockTopLeft()[0][1] + c))
+                if c < cols - 1:
+                    data += '\t'
+            data += '\n'
+        # Create text data object
+        clipboard = wx.TextDataObject()
+        # Set data object value
+        clipboard.SetText(data)
+        # Put the data in the clipboard
+        if wx.TheClipboard.Open():
+            wx.TheClipboard.SetData(clipboard)
+            wx.TheClipboard.Close()
+        else:
+            wx.MessageBox("Can't open the clipboard", "Error")
+
+    def paste(self, stage):
+        if stage == 'clip':
+            clipboard = wx.TextDataObject()
+            if wx.TheClipboard.Open():
+                wx.TheClipboard.GetData(clipboard)
+                wx.TheClipboard.Close()
+            else:
+                wx.MessageBox("Can't open the clipboard", "Error")
+            data = clipboard.GetText()
+            if self.GetSelectionBlockTopLeft() == []:
+                rowstart = self.GetGridCursorRow()
+                colstart = self.GetGridCursorCol()
+            else:
+                rowstart = self.GetSelectionBlockTopLeft()[0][0]
+                colstart = self.GetSelectionBlockTopLeft()[0][1]
+        elif stage == 'undo':
+            data = self.data4undo[2]
+            rowstart = self.data4undo[0]
+            colstart = self.data4undo[1]
+        else:
+            wx.MessageBox("Paste method "+stage+" does not exist", "Error")
+        text4undo = ''
+        # Convert text in a array of lines
+        for y, r in enumerate(data.splitlines()):
+            # Convert c in a array of text separated by tab
+            for x, c in enumerate(r.split('\t')):
+                if y + rowstart < self.NumberRows and x + colstart < self.NumberCols :
+                    text4undo += str(self.GetCellValue(rowstart + y, colstart + x)) + '\t'
+                    self.SetCellValue(rowstart + y, colstart + x, c)
+            text4undo = text4undo[:-1] + '\n'
+        if stage == 'clip':
+            self.data4undo = [rowstart, colstart, text4undo]
+        else:
+            self.data4undo = [0, 0, '']
+
+    def delete(self):
+        # print "Delete method"
+        # Number of rows and cols
+        if self.GetSelectionBlockTopLeft() == []:
+            rows = 1
+            cols = 1
+        else:
+            rows = self.GetSelectionBlockBottomRight()[0][0] - self.GetSelectionBlockTopLeft()[0][0] + 1
+            cols = self.GetSelectionBlockBottomRight()[0][1] - self.GetSelectionBlockTopLeft()[0][1] + 1
+        # Clear cells contents
+        for r in range(rows):
+            for c in range(cols):
+                if self.GetSelectionBlockTopLeft() == []:
+                    self.SetCellValue(self.GetGridCursorRow() + r, self.GetGridCursorCol() + c, '')
+                else:
+                    self.SetCellValue(self.GetSelectionBlockTopLeft()[0][0] + r, self.GetSelectionBlockTopLeft()[0][1] + c, '')
+
+    
     def OnCellRightDown(self, e):
         print 'hello'
     
     def OnLabelDClick(self, evt):
         col = evt.GetCol()
+        if not col >= 0:
+            return
         col_size = self.GetColSize(col)
         #self.AutoSizeColumn(col, True)
         #'''
@@ -48,7 +160,7 @@ class Controller:
         
         #grid parameter
         self.grid_max_colume_number = 0
-        self.grid_max_preview_row_number = 1024
+        self.grid_max_preview_row_number = 4096
         
         #event bind
         #auimanager
@@ -273,5 +385,38 @@ class Controller:
         mPanel.Layout()
         self.m_view.m_auimanager.AddPage(mPanel, page_name, False)
         pass
-    
-    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if __name__ == '__main__':
+    app = wx.App()
+    ctrl = Controller(None)
+    app.MainLoop()
+    pass
