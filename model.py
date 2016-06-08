@@ -338,7 +338,15 @@ class Model():
         
         
         pass 
-        
+    def GetRowRangeData(self, filename, limit, offset):
+        if not filename:
+            return
+        else:
+            cmd = "SELECT * FROM %s LIMIT %s OFFSET %s"%(self.log.tableName, limit, offset)
+            raw_data = self.sqlite.execute_command(filename, cmd)
+            data = self.SetDataToGrid(filename, raw_data)
+            return data
+        pass
     
     def GetTimeRangeData(self, filename, hl, ll):
         hl = str(hl)
@@ -359,17 +367,19 @@ class Model():
             ts_ll = self.sqlite.execute_command(filename, cmd_ll)[0][0]
 
             cmd_range = "SELECT * FROM %s WHERE ts BETWEEN %s AND %s ORDER BY ts ASC"%(self.log.tableName, ts_ll, ts_hl)
-            row_data = self.sqlite.execute_command(filename, cmd_range)
-            data = self.SetDataToGrid(filename, row_data)    
+            raw_data = self.sqlite.execute_command(filename, cmd_range)
+            data = self.SetDataToGrid(filename, raw_data)    
             return data
         else:
             return None
             pass
         pass    
     
-    def SetDataToGrid(self, filename, row_data):
+    def SetDataToGrid(self, filename, raw_data):
+        if not len(raw_data) >= 1:
+            return
         first_append_title = True
-        data = [[] for _ in range(len(row_data)+1)]
+        data = [[] for _ in range(len(raw_data)+1)]
         title = self.sqlite.get_col_name(filename, '')
         
         mp_message = ''
@@ -387,7 +397,7 @@ class Model():
         data[0][data[0].index('msg')] = 'mc_log'
         
         row_count = 1
-        for row in row_data:
+        for row in raw_data:
             data[row_count].append(row[0])
             #data[row_count].append(self.log.timestamp_convert(row[0])['day'])
             data[row_count].append(self.log.timestamp_convert(row[0])['time'])
@@ -417,10 +427,14 @@ class Model():
 
 
     def GetDataOnItemActivated(self, filename, row_limit):
-        cmd = "SELECT * FROM %s LIMIT %s"%(self.log.tableName, row_limit)
+        if row_limit == 0:
+            cmd = "SELECT * FROM %s"%self.log.tableName
+        else:    
+            cmd = "SELECT * FROM %s LIMIT %s"%(self.log.tableName, row_limit)
         #cmd = "SELECT * FROM %s"%self.log.tableName
         row_data = self.sqlite.execute_command(filename, cmd)
         data = self.SetDataToGrid(filename, row_data)
+        
         if len(row_data) < 1:
             return None
         else:

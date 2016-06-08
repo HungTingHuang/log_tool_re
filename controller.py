@@ -8,6 +8,7 @@ import view
 import model
 import threading
 import sys
+import time
 
 
 class HugeTableGrid(wx.grid.Grid):
@@ -146,6 +147,13 @@ class HugeTableGrid(wx.grid.Grid):
         #'''
         pass
 
+'''
+class HugeAuiNoteBook(wx.Panel):
+    def __init__(self, parent, ID_ANY, DefaultPosition, DefaultSize, 0, AUI_NB_DEFAULT_STYLE, "AuiNotebook"):
+        wx.Panel(self, parent, ID_ANY, DefaultPosition, DefaultSize, 0, AUI_NB_DEFAULT_STYLE, "AuiNotebook")
+        pass
+    pass
+'''
 class Controller:
     def __init__(self, app):
         self.m_view = view.View(None)
@@ -158,11 +166,16 @@ class Controller:
         self.current_select_file_path = None
         self.current_select_file_daytime = None
         
+        self.lock = threading.Lock()
+        
+        
         #grid parameter
         self.grid_max_colume_number = 0
-        self.grid_max_preview_row_number = 4096
+        self.grid_max_row_number = 8192
         
         #event bind
+        
+        
         #auimanager
         self.m_view.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnANBPageChanged, self.m_view.m_auimanager)
         
@@ -258,11 +271,38 @@ class Controller:
                 page_name = '%s: %s [preview]'%(projName, itemName)
                 self.m_view.m_statusBar.SetStatusText(self.show_current_file, 0)
                 
-                data = self.m_model.GetDataOnItemActivated(itemPath, self.grid_max_preview_row_number)
-                if len(data) >=1:
-                    self.mAddGridPage(page_name, data[0], data, len(data), len(data[0]))
+                #data = self.m_model.GetDataOnItemActivated(itemPath, self.grid_max_row_number)
+                
+                self.mAddMultiGridPage(itemPath, page_name)
+                '''
+                data_len = parse.find_total_row_number(itemPath)
+                row_limit = self.grid_max_row_number
+                page_number = 1
+                
+                
+                if data_len > row_limit:
+                    page_number = data_len/row_limit
+                    if not data_len%row_limit == 0:
+                        page_number += 1
+                    else:
+                        pass
                 else:
-                    pass
+                    pass 
+                
+                
+                offset = 0
+                for num in range(0, page_number):
+                    page_name_text =  page_name + '_#' + str(num)
+                    data = self.m_model.GetRowRangeData(itemPath, row_limit, offset)
+                    offset += (row_limit+1)
+                    
+                    if data and len(data) >1:
+                        self.mAddMultiGridPage(page_name, data[0], data)
+                        #self.mAddGridPage(page_name_text, data[0], data)
+                    else:
+                        pass
+                pass
+                '''
         pass
     
     def OnItemExpanded(self, evt):
@@ -316,14 +356,14 @@ class Controller:
         
             if ts_hl >= ts_ll:
                 data = self.m_model.GetTimeRangeData(self.current_select_file_path, ts_hl, ts_ll)
-                if data == None:
+                if  not data and len(data) > 1:
                     pass
                 else:
                     page_name = "%s: %s [%s:%s ~ %s:%s]"%(self.current_select_project_name, 
                                                           self.current_select_file_name,
                                                           self.ll_hr, self.ll_mm,
                                                           self.hl_hr, self.hl_mm)
-                    self.mAddGridPage(page_name, data[0], data, len(data), len(data[0]))
+                    self.mAddGridPage(page_name, data[0], data)
             else:
                 pass
         pass
@@ -356,11 +396,16 @@ class Controller:
         return currentPath
                 
     
-    '''arg , page_name, col_title, data, row_szie, col_size'''
-    def mAddGridPage(self, page_name, col_title, data, row_size, col_size):
+    def mAddGridPage(self, page_name, col_title, data):
+       
+        self.lock.acquire()
         mParent = self.m_view.m_auimanager
+        
         mPanel = wx.Panel(mParent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
         Panel_Sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        row_size = len(data)
+        col_size = len(col_title)
         
         mGrid = HugeTableGrid(mPanel, col_title, data, row_size, col_size)
         '''
@@ -380,11 +425,93 @@ class Controller:
             mGrid.AutoSizeColumn(col, True)
             pass
         #'''
+        
+        
         Panel_Sizer.Add( mGrid, 1, wx.ALL|wx.EXPAND, 5 )
         mPanel.SetSizer(Panel_Sizer)
         mPanel.Layout()
         self.m_view.m_auimanager.AddPage(mPanel, page_name, False)
+        self.lock.release()
+       
         pass
+    
+    
+    def mAddMultiGridPage(self, filename, page_name):
+        mParent = self.m_view.m_auimanager
+        mPanel = wx.Panel(mParent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
+        Panel_Sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        mPanel.yy = 'ssssssssssssssssssssssssssssssssssssssssssss'
+        
+        status_Sizer = wx.BoxSizer(wx.HORIZONTAL)
+        grid_Sizer = wx.BoxSizer(wx.VERTICAL)
+        Panel_Sizer.Add( status_Sizer, 0, 0, 5 )
+        Panel_Sizer.Add( grid_Sizer, 0, wx.EXPAND, 5 )
+            
+        
+        parse = model.LogParse()
+        data_len = parse.find_total_row_number(filename)
+        row_limit = self.grid_max_row_number
+        page_number = 1
+                
+                
+        if data_len > row_limit:
+            page_number = data_len/row_limit
+            if not data_len%row_limit == 0:
+                page_number += 1
+            else:
+                pass
+        else:
+            pass 
+        
+        spinCtrl = wx.SpinCtrl(mPanel, 
+                                 wx.ID_ANY, wx.EmptyString, 
+                                 wx.DefaultPosition, 
+                                 wx.DefaultSize, 
+                                 wx.SP_WRAP, 
+                                 1, page_number, 1)
+        
+        staticText = wx.StaticText( mPanel, 
+                                    wx.ID_ANY, 
+                                    u"Total Rows: " + str(data_len), 
+                                    wx.DefaultPosition, 
+                                    wx.DefaultSize, 0 )
+        status_Sizer.Add(spinCtrl, 1, wx.EXPAND|wx.RIGHT, 5)
+        status_Sizer.Add(staticText, 1, wx.ALL, 5)        
+                
+        offset = 0
+        '''
+        for num in range(0, page_number):
+            page_name_text =  page_name + '_#' + str(num)
+            data = self.m_model.GetRowRangeData(filename, row_limit, offset)
+            offset += (row_limit+1)
+                    
+            if data and len(data) >1:
+                self.mAddMultiGridPage(page_name, data[0], data)
+                        #self.mAddGridPage(page_name_text, data[0], data)
+            else:
+                pass
+        pass
+        '''
+        
+        self.m_view.Bind(wx.EVT_SPINCTRL, self.mTest, spinCtrl)
+        data = self.m_model.GetRowRangeData(filename, row_limit, offset)
+        
+        
+        row_size = len(data)
+        col_size = len(data[0])
+        mGrid = HugeTableGrid(mPanel, data[0], data, row_size, col_size)
+        
+        grid_Sizer.Add( mGrid, 1, wx.EXPAND, 5 )
+        mPanel.SetSizer(Panel_Sizer)
+        mPanel.Layout()
+        self.m_view.m_auimanager.AddPage(mPanel, page_name, False)
+        pass
+    
+    def mTest(self, evt):
+        obj = evt.GetEventObject().Parent.yy
+        print obj
+        print "hello"
 
 
 

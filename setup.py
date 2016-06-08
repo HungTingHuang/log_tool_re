@@ -5,6 +5,6 @@ setup(
     options = {'py2exe': {
         'bundle_files': 1
     }},
-    windows = [{'script': 'main.py'}],
+    windows = [{'script': 'controller.py'}],
     zipfile = None
 )
