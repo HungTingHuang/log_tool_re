@@ -6,6 +6,7 @@ import calendar
 from collections import OrderedDict
 import wx.grid as gridlib
 import xlrd
+from matplotlib.cbook import Null
 #import xlsgrid
 #import numpy
 
@@ -23,6 +24,15 @@ class HugeTable(gridlib.PyGridTableBase):
         
         self.ReadyOnly = gridlib.GridCellAttr()
         self.ReadyOnly.SetReadOnly(True)
+        
+        pass
+    def UpdateData(self, title, data, rows, cols):
+        self.title = title
+        self.data = data
+        
+        #self.row_count = rows
+        self.col_count = cols
+        self.row_count = rows
         
         pass
     
@@ -50,6 +60,8 @@ class HugeTable(gridlib.PyGridTableBase):
         return False
     
     def GetValue(self, row, col):
+        
+        
         if col >= len(self.data[row]) or row > self.row_count:
             return ''
         else:
@@ -136,9 +148,11 @@ class Sqlite():
                 con.close()
             return data
         
-    def get_total_row_number(self, filename):
+    def get_total_row_number(self, filename, cmd):
         count = 0
-        cmd = "SELECT COUNT(1) FROM %s"%self.tableName
+        temp = "SELECT COUNT(1) FROM "
+        cmd_t = cmd.partition('FROM')
+        cmd = temp + cmd_t[2] 
         if not filename:
             return count
         
@@ -157,6 +171,7 @@ class Sqlite():
         pass
     
     #@staticmethod
+    '''
     def get_data_repeat(self, filename, row_limit):
         data = list()
         if self.count == 0:#first call
@@ -175,17 +190,14 @@ class Sqlite():
         self.count += 1
         return data 
         pass
-    
+    '''
     
 class LogParse():
-    def __init__(self):
+    def __init__(self, filename):
         #Sqlite Database
         self.sqlite = Sqlite()
         self.tableName = 'log_raw'
         self.sqlite.tableName = self.tableName
-        
-        #proj
-        self.curProj = 'unknow'#current project
         
         #identification_token
         self.id_token = 'msg'
@@ -200,9 +212,15 @@ class LogParse():
         self.ssm_mecha = 'Get hight score'
         
         self.emmem = 'HASP KEY CHECK : SUCCESS'
-    
-    def find_total_row_number(self, filename):
-        return self.sqlite.get_total_row_number(filename)[0][0]
+        
+        #proj
+        if filename == None:
+            self.curProj = 'unknow'#current project
+        else:
+            self.find_current_project(filename)
+        
+    def find_total_row_number(self, filename, cmd):
+        return self.sqlite.get_total_row_number(filename, cmd)[0][0]
     
     def find_table_col_name(self, filename, cmd):
         return self.sqlite.get_col_name(filename, cmd)
@@ -214,6 +232,7 @@ class LogParse():
         
         
     def find_current_project(self, filename):
+        
         cmd = 'SELECT %s FROM %s LIMIT 1'%(self.id_token, self.tableName)
         data = self.sqlite.execute_command(filename, cmd)[0]
         
@@ -245,10 +264,16 @@ class LogParse():
         pass
     '''
     def find_mp_message(self, msg):
-        if len(msg) > 320:
-            return True
+        if self.curProj == 'SSM_Balloon':
+            if len(msg) > 294:
+                return True
+            else:
+                return False
         else:
-            return False
+            if len(msg) > 320:
+                return True
+            else:
+                return False
         pass
     
     
@@ -328,35 +353,31 @@ class LogParse():
 class Model():
     def __init__(self):
         self.sqlite = Sqlite()
-        self.log = LogParse()
-        self.sqlite.tableName = self.log.tableName
+        self.sqlite.tableName = 'log_raw'
     
     
     
-    def GetGridDataFromPage(self):
-        
-        
-        
-        pass 
-    def GetRowRangeData(self, filename, limit, offset):
+   
+    def GetFullDataCmd(self, filename):
         if not filename:
             return
-        else:
-            cmd = "SELECT * FROM %s LIMIT %s OFFSET %s"%(self.log.tableName, limit, offset)
-            raw_data = self.sqlite.execute_command(filename, cmd)
-            data = self.SetDataToGrid(filename, raw_data)
-            return data
+        log = LogParse(filename)
+        cmd = "SELECT * FROM %s"%log.tableName
+        return cmd
         pass
     
-    def GetTimeRangeData(self, filename, hl, ll):
+    def GetTimeRangeCmd(self,filename, hl, ll):
+        if not filename:
+            return
+        log = LogParse(filename)
         hl = str(hl)
         hl = hl[::-1].replace(hl[len(hl)-1][::-1], '%'[::-1], 1)[::-1]
         
         ll = str(ll)
         ll = ll[::-1].replace(ll[len(ll)-1][::-1], '%'[::-1], 1)[::-1]
         
-        cmd_hl = "SELECT * FROM %s WHERE ts LIKE '%s' ORDER BY ts DESC LIMIT 1"%(self.log.tableName, hl)
-        cmd_ll = "SELECT * FROM %s WHERE ts LIKE '%s' ORDER BY ts ASC LIMIT 1"%(self.log.tableName, ll)
+        cmd_hl = "SELECT * FROM %s WHERE ts LIKE '%s' ORDER BY ts DESC LIMIT 1"%(log.tableName, hl)
+        cmd_ll = "SELECT * FROM %s WHERE ts LIKE '%s' ORDER BY ts ASC LIMIT 1"%(log.tableName, ll)
         
         data_hl = self.sqlite.execute_command(filename, cmd_hl)
         data_ll = self.sqlite.execute_command(filename, cmd_ll)
@@ -366,7 +387,67 @@ class Model():
             ts_hl = self.sqlite.execute_command(filename, cmd_hl)[0][0]
             ts_ll = self.sqlite.execute_command(filename, cmd_ll)[0][0]
 
-            cmd_range = "SELECT * FROM %s WHERE ts BETWEEN %s AND %s ORDER BY ts ASC"%(self.log.tableName, ts_ll, ts_hl)
+            cmd_range = "SELECT * FROM %s WHERE ts BETWEEN %s AND %s ORDER BY ts ASC"%(log.tableName, ts_ll, ts_hl)
+            #raw_data = self.sqlite.execute_command(filename, cmd_range)
+            #data = self.SetDataToGrid(filename, raw_data)    
+            return cmd_range
+        else:
+            return None
+            pass
+        pass
+    
+    def GetRowRangeData(self, filename, cmd, limit, offset):
+        range = " LIMIT %s OFFSET %s"%(limit, offset)
+        if not filename:
+            return
+        else:
+            log = LogParse(filename)
+            cmd += range
+            #print 'start'
+            raw_data = self.sqlite.execute_command(filename, cmd)            
+            #print 'get raw data'
+            data = self.SetDataToGrid(filename, raw_data)
+            #print 'parsing data'
+            return data
+        pass
+    '''
+    def GetRowRangeData(self, filename, limit, offset):
+        
+        if not filename:
+            return
+        else:
+            log = LogParse(filename)
+            cmd = "SELECT * FROM %s LIMIT %s OFFSET %s"%(log.tableName, limit, offset)
+           
+            raw_data = self.sqlite.execute_command(filename, cmd)
+            
+            data = self.SetDataToGrid(filename, raw_data)
+            return data
+        pass
+    ''' 
+    '''
+    def GetTimeRangeData(self, filename, hl, ll):
+        if not filename:
+            return
+        log = LogParse(filename)
+        hl = str(hl)
+        hl = hl[::-1].replace(hl[len(hl)-1][::-1], '%'[::-1], 1)[::-1]
+        
+        ll = str(ll)
+        ll = ll[::-1].replace(ll[len(ll)-1][::-1], '%'[::-1], 1)[::-1]
+        
+        cmd_hl = "SELECT * FROM %s WHERE ts LIKE '%s' ORDER BY ts DESC LIMIT 1"%(log.tableName, hl)
+        cmd_ll = "SELECT * FROM %s WHERE ts LIKE '%s' ORDER BY ts ASC LIMIT 1"%(log.tableName, ll)
+        
+        data_hl = self.sqlite.execute_command(filename, cmd_hl)
+        data_ll = self.sqlite.execute_command(filename, cmd_ll)
+        
+
+        if len(data_hl) == 1 and len(data_ll) == 1:
+            ts_hl = self.sqlite.execute_command(filename, cmd_hl)[0][0]
+            ts_ll = self.sqlite.execute_command(filename, cmd_ll)[0][0]
+
+            cmd_range = "SELECT * FROM %s WHERE ts BETWEEN %s AND %s ORDER BY ts ASC"%(log.tableName, ts_ll, ts_hl)
             raw_data = self.sqlite.execute_command(filename, cmd_range)
             data = self.SetDataToGrid(filename, raw_data)    
             return data
@@ -374,10 +455,15 @@ class Model():
             return None
             pass
         pass    
-    
+    '''
     def SetDataToGrid(self, filename, raw_data):
         if not len(raw_data) >= 1:
             return
+        else:
+            pass
+        
+        
+        log = LogParse(filename)
         first_append_title = True
         data = [[] for _ in range(len(raw_data)+1)]
         title = self.sqlite.get_col_name(filename, '')
@@ -395,20 +481,20 @@ class Model():
         iter +=1
         data[0].insert(iter, 'ms')
         data[0][data[0].index('msg')] = 'mc_log'
-        
+        #print 'title processed'
         row_count = 1
         for row in raw_data:
             data[row_count].append(row[0])
             #data[row_count].append(self.log.timestamp_convert(row[0])['day'])
-            data[row_count].append(self.log.timestamp_convert(row[0])['time'])
-            data[row_count].append(self.log.timestamp_convert(row[0])['ms'])
+            data[row_count].append(log.timestamp_convert(row[0])['time'])
+            data[row_count].append(log.timestamp_convert(row[0])['ms'])
             data[row_count].append(row[1])
             data[row_count].append(row[2])
             data[row_count].append(row[3])
             data[row_count].append(row[4])
-            if self.log.find_mp_message(row[5]):
-                mp_message = self.log.mp_message_standardize(row[5])
-                mp_message = self.log.mp_message_parse(mp_message)#return OrderedDict()
+            if log.find_mp_message(row[5]):
+                mp_message = log.mp_message_standardize(row[5])
+                mp_message = log.mp_message_parse(mp_message)#return OrderedDict()
                 if first_append_title:
                     for keys in mp_message:
                         data[0].append(keys)
@@ -422,15 +508,17 @@ class Model():
                 data[row_count].append(row[5])
                 pass    
             row_count += 1
+        #print 'write to array'
         return data
         pass
 
-
+    """
     def GetDataOnItemActivated(self, filename, row_limit):
+        log = LogParse(filename)
         if row_limit == 0:
-            cmd = "SELECT * FROM %s"%self.log.tableName
+            cmd = "SELECT * FROM %s"%log.tableName
         else:    
-            cmd = "SELECT * FROM %s LIMIT %s"%(self.log.tableName, row_limit)
+            cmd = "SELECT * FROM %s LIMIT %s"%(log.tableName, row_limit)
         #cmd = "SELECT * FROM %s"%self.log.tableName
         row_data = self.sqlite.execute_command(filename, cmd)
         data = self.SetDataToGrid(filename, row_data)
@@ -493,7 +581,7 @@ class Model():
         '''
         
         pass
-
+    """
 
         #self, sql_name, col_limit, 
    

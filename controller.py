@@ -9,18 +9,238 @@ import model
 import threading
 import sys
 import time
+from wx import SpinButton
+from model import Model
 
+
+class GridDataPage(wx.Panel):
+    def __init__(self, parent, page_name, filename, cmd, grid_row_limit):
+        
+        ##Panel Setting
+        self.mPage = wx.Panel(parent, 
+                         wx.ID_ANY, 
+                         wx.DefaultPosition, 
+                         wx.DefaultSize, 
+                         wx.TAB_TRAVERSAL)
+        
+        pageSizer = wx.BoxSizer(wx.VERTICAL)
+        statusSizer = wx.BoxSizer(wx.HORIZONTAL)
+        gridSizer = wx.BoxSizer(wx.VERTICAL)
+        spinnerSizer = wx.BoxSizer(wx.HORIZONTAL)
+        exportSizer = wx.BoxSizer(wx.VERTICAL)
+        pageSizer.Add( statusSizer, 0, wx.EXPAND, 5 )
+        pageSizer.Add( gridSizer, 0, wx.EXPAND, 5 )
+        statusSizer.Add(spinnerSizer, 1, wx.EXPAND, 5)
+        statusSizer.Add(exportSizer, 0, 0, 5)
+        
+        
+        self.m_model = Model()
+        self.parse = model.LogParse(filename)
+        
+        self.cmd = cmd
+        #mPage.m_id = 
+        #init data preview
+        self.mPage.filename = filename
+        self.mPage.m_data_offset = 0
+        self.mPage.m_data_row_limit = grid_row_limit
+        
+        self.mPage.m_data = self.m_model.GetRowRangeData(self.mPage.filename,
+                                                         self.cmd,
+                                                         self.mPage.m_data_row_limit, 
+                                                         self.mPage.m_data_offset)
+        
+        self.mPage.m_data_len = self.parse.find_total_row_number(filename, self.cmd)
+        self.mPage.m_grid_title = self.mPage.m_data[0]
+        self.mPage.m_grid_title_len = len(self.mPage.m_data[0])
+        #self.mPage.m_data = self.mPage.m_data[1]
+        
+        self.mPage.m_current_page_number = 1
+        self.mPage.m_max_page_number = 0
+        
+        if self.mPage.m_data_len > self.mPage.m_data_row_limit:
+            self.mPage.m_max_page_number = self.mPage.m_data_len/self.mPage.m_data_row_limit
+            if not self.mPage.m_data_len/self.mPage.m_data_row_limit == 0:
+                self.mPage.m_max_page_number += 1
+            else:
+                pass
+        else:
+            pass 
+        
+        self.mPage.m_min_page_number = 1
+        
+        self.spinText = wx.TextCtrl(self.mPage,
+                                    wx.ID_ANY,
+                                    wx.EmptyString,
+                                    wx.DefaultPosition,
+                                    wx.DefaultSize,
+                                    wx.TE_READONLY)
+        
+        self.spinText.SetValue(str(self.mPage.m_current_page_number))
+        
+        self.spinButton = wx.SpinButton(self.mPage, 
+                                        wx.ID_ANY,
+                                        wx.DefaultPosition, 
+                                        wx.DefaultSize,
+                                        wx.SP_WRAP)
+        '''
+        spinCtrl = wx.SpinCtrl(mPage, 
+                                 wx.ID_ANY, wx.EmptyString, 
+                                 wx.DefaultPosition, 
+                                 wx.DefaultSize, 
+                                 wx.SP_WRAP, 
+                                 1, mPage.m_data_len, 1)
+        '''
+        
+        self.staticText = wx.StaticText( self.mPage, 
+                                         wx.ID_ANY, 
+                                         u"Total Rows: " + str(self.mPage.m_data_len), 
+                                         wx.DefaultPosition, 
+                                         wx.DefaultSize, 0 )
+        
+        exportButton = wx.Button( self.mPage, 
+                                  wx.ID_ANY, 
+                                  u"EXPORT", 
+                                  wx.DefaultPosition, 
+                                  wx.DefaultSize, 0 )
+        
+        
+        spinnerSizer.Add(self.spinText, 0, wx.EXPAND, 5)
+        spinnerSizer.Add(self.spinButton, 0, wx.EXPAND, 5)
+        spinnerSizer.Add(self.staticText, 0, wx.ALL, 5)
+        exportSizer.Add(exportButton, 0, wx.ALIGN_RIGHT, 5)
+        
+        #row_size = len(data)
+        #col_size = len(data[0])
+        self.mGrid = HugeTableGrid(self.mPage, 
+                                   self.mPage.m_data[0], 
+                                   self.mPage.m_data,
+                                   len(self.mPage.m_data), 
+                                   len(self.mPage.m_data[0]))
+        
+        gridSizer.Add( self.mGrid, 1, wx.EXPAND, 5 )
+        self.mPage.SetSizer(pageSizer)
+        self.mPage.Layout()
+        parent.AddPage(self.mPage, page_name, False)     
+        
+        
+        parent.Bind(wx.EVT_SPIN_UP, self.OnSpinUp, self.spinButton)
+        parent.Bind(wx.EVT_SPIN_DOWN, self.OnSpinDown, self.spinButton)
+        parent.Bind(wx.EVT_BUTTON, self.OnExport, exportButton)
+        pass
+    
+    def OnExport(self, evt):
+        print 'hello'
+        pass
+    
+    def OnSpinUp(self, evt):
+        row_limit = self.mPage.m_data_row_limit
+        if self.mPage.m_current_page_number <= self.mPage.m_max_page_number and self.mPage.m_current_page_number >= self.mPage.m_min_page_number:
+            if self.mPage.m_current_page_number == self.mPage.m_max_page_number:
+                self.mPage.m_current_page_number = self.mPage.m_min_page_number
+            else:
+                self.mPage.m_current_page_number += 1
+                #self.mPage.m_data_offset += self.mPage.m_data_row_limit
+        else:
+            pass
+        self.mPage.m_data_offset = (self.mPage.m_current_page_number-1)*self.mPage.m_data_row_limit
+        
+        if self.mPage.m_current_page_number == self.mPage.m_max_page_number:
+            row_limit = (self.mPage.m_current_page_number * self.mPage.m_data_row_limit) - self.mPage.m_data_len
+            
+        else:
+            pass
+        
+        self.mPage.m_data = self.m_model.GetRowRangeData(self.mPage.filename,
+                                                         self.cmd, 
+                                                         row_limit, 
+                                                         self.mPage.m_data_offset)
+        self.spinText.SetValue(str(self.mPage.m_current_page_number))
+        
+        self.mGrid.OnUpdate(self.mPage.m_data[0], 
+                           self.mPage.m_data, 
+                           len(self.mPage.m_data), 
+                           len(self.mPage.m_data[0]))
+        
+        pass
+    
+    def OnSpinDown(self, evt):
+        row_limit = self.mPage.m_data_row_limit
+        if self.mPage.m_current_page_number <= self.mPage.m_max_page_number and self.mPage.m_current_page_number >= self.mPage.m_min_page_number:
+            if self.mPage.m_current_page_number == self.mPage.m_min_page_number:
+                self.mPage.m_current_page_number = self.mPage.m_max_page_number
+                
+            else:
+                self.mPage.m_current_page_number -= 1
+        else:
+            pass
+        
+        self.mPage.m_data_offset = (self.mPage.m_current_page_number-1)*self.mPage.m_data_row_limit
+        
+        if self.mPage.m_current_page_number == self.mPage.m_max_page_number:
+            row_limit = (self.mPage.m_current_page_number * self.mPage.m_data_row_limit) - self.mPage.m_data_len
+            
+        else:
+            pass
+        
+        self.mPage.m_data = self.m_model.GetRowRangeData(self.mPage.filename,
+                                                         self.cmd, 
+                                                         row_limit, 
+                                                         self.mPage.m_data_offset)
+        
+        self.spinText.SetValue(str(self.mPage.m_current_page_number))
+        self.mGrid.OnUpdate(self.mPage.m_data[0], 
+                            self.mPage.m_data,
+                            len(self.mPage.m_data), 
+                            len(self.mPage.m_data[0]))
+        
+        
+        
+        
+        
+        pass
 
 class HugeTableGrid(wx.grid.Grid):
     def __init__(self, parent, title, data, rows, cols):
         wx.grid.Grid.__init__(self, parent, -1)
         
-        table = model.HugeTable(title, data, rows, cols)
-        self.SetTable(table, True)
+        
+        self.table = model.HugeTable(title, data, rows, cols)
+        self.SetTable(self.table, True)
+        
+        self.cols = self.GetNumberCols() 
+        self.rows = self.GetNumberRows()
+        
+        
         self.Bind(wx.EVT_KEY_DOWN, self.OnKey)
         self.Bind(wx.grid.EVT_GRID_CELL_RIGHT_CLICK, self.OnCellRightDown)
         self.Bind(wx.grid.EVT_GRID_LABEL_LEFT_DCLICK, self.OnLabelDClick)
-    
+    '''
+    def Update(self, *args, **kwargs):
+        return wx.grid.Grid.Update(self, *args, **kwargs)
+    '''
+    def OnUpdate(self, title, data, rows, cols):
+        self.table.Clear()
+        self.table = model.HugeTable(title, data, rows, cols)
+        self.SetTable(self.table, True)
+        
+        
+        #self.table.UpdateData(title, data, rows, cols)     
+        '''
+        if rows != self.rows:
+            if rows < self.rows:
+                #cc = 
+                self.table.DeleteRows(rows, (self.rows - rows))
+                
+            elif rows > self.rows:
+                self.table.AppendRows(self.rows, rows)
+            else:
+                pass
+        else:
+            pass
+        ''' 
+        
+        self.Refresh()
+        
     def OnKey(self, event):
         # If Ctrl+C is pressed...
         if event.ControlDown() and event.GetKeyCode() == 67:
@@ -233,14 +453,14 @@ class Controller:
         _sql = model.Sqlite()
         if _sql.is_sqlite_file(itemPath):
             self.current_select_file_path = itemPath
-            parse = model.LogParse()
+            parse = model.LogParse(itemPath)
             self.current_select_project_name = parse.find_current_project(itemPath)
             self.current_select_file_name = itemName
             self.current_select_file_path = itemPath
             self.show_current_file = '%s: %s'%(self.current_select_project_name, itemName)
             self.m_view.m_statusBar.SetStatusText(self.show_current_file, 0)
-            _parse = model.LogParse()
-            self.current_select_file_daytime = _parse.find_current_project_daytime(itemPath)
+            log = model.LogParse(itemPath)
+            self.current_select_file_daytime = log.find_current_project_daytime(itemPath)
         else:
             pass  
         pass
@@ -264,16 +484,21 @@ class Controller:
         else:
             _sql = model.Sqlite()
             if _sql.is_sqlite_file(itemPath):
-                parse = model.LogParse()
-                projName = parse.find_current_project(itemPath)
+                log = model.LogParse(itemPath)
+                projName = log.curProj
                 self.current_select_project_name = projName
                 self.show_current_file = '%s: %s'%(projName, itemName)
                 page_name = '%s: %s [preview]'%(projName, itemName)
                 self.m_view.m_statusBar.SetStatusText(self.show_current_file, 0)
                 
-                #data = self.m_model.GetDataOnItemActivated(itemPath, self.grid_max_row_number)
                 
-                self.mAddMultiGridPage(itemPath, page_name)
+                GridDataPage(self.m_view.m_auimanager, 
+                             page_name, 
+                             itemPath,
+                             self.m_model.GetFullDataCmd(itemPath),
+                             self.grid_max_row_number)
+                
+                
                 '''
                 data_len = parse.find_total_row_number(itemPath)
                 row_limit = self.grid_max_row_number
@@ -350,12 +575,18 @@ class Controller:
             MM = int(string_split[1])
             dd = int(string_split[2])
             
-            parse = model.LogParse()
+            parse = model.LogParse(self.current_select_file_path)
             ts_hl = parse.unixtime_covert(yy, MM, dd, self.hl_hr, self.hl_mm, 00)
             ts_ll = parse.unixtime_covert(yy, MM, dd, self.ll_hr, self.ll_mm, 00)
         
             if ts_hl >= ts_ll:
-                data = self.m_model.GetTimeRangeData(self.current_select_file_path, ts_hl, ts_ll)
+                #data = self.m_model.GetTimeRangeData(self.current_select_file_path, ts_hl, ts_ll)
+                cmd = self.m_model.GetTimeRangeCmd(self.current_select_file_path, ts_hl, ts_ll)
+                page_name = "%s: %s [%s:%s ~ %s:%s]"%(self.current_select_project_name, 
+                                                      self.current_select_file_name,
+                                                      self.ll_hr, self.ll_mm,
+                                                      self.hl_hr, self.hl_mm)
+                '''
                 if  not data and len(data) > 1:
                     pass
                 else:
@@ -363,7 +594,15 @@ class Controller:
                                                           self.current_select_file_name,
                                                           self.ll_hr, self.ll_mm,
                                                           self.hl_hr, self.hl_mm)
+                
                     self.mAddGridPage(page_name, data[0], data)
+                '''
+                GridDataPage(self.m_view.m_auimanager, 
+                             page_name, 
+                             self.current_select_file_path, 
+                             cmd, 
+                             self.grid_max_row_number)
+
             else:
                 pass
         pass
@@ -395,7 +634,7 @@ class Controller:
                 traceItem = tree.GetItemParent(traceItem)
         return currentPath
                 
-    
+    """
     def mAddGridPage(self, page_name, col_title, data):
        
         self.lock.acquire()
@@ -434,8 +673,8 @@ class Controller:
         self.lock.release()
        
         pass
-    
-    
+    """
+    """
     def mAddMultiGridPage(self, filename, page_name):
         mParent = self.m_view.m_auimanager
         mPanel = wx.Panel(mParent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
@@ -464,13 +703,20 @@ class Controller:
         else:
             pass 
         
+        
         spinCtrl = wx.SpinCtrl(mPanel, 
-                                 wx.ID_ANY, wx.EmptyString, 
+                                 wx.ID_ANY, u'454545', 
                                  wx.DefaultPosition, 
                                  wx.DefaultSize, 
                                  wx.SP_WRAP, 
                                  1, page_number, 1)
-        
+        '''
+        spinCtrl = wx.SpinButton(mPanel, 
+                                 wx.ID_ANY,
+                                 wx.DefaultPosition, 
+                                 wx.DefaultSize, 
+                                 wx.SP_WRAP)
+        '''
         staticText = wx.StaticText( mPanel, 
                                     wx.ID_ANY, 
                                     u"Total Rows: " + str(data_len), 
@@ -507,11 +753,13 @@ class Controller:
         mPanel.Layout()
         self.m_view.m_auimanager.AddPage(mPanel, page_name, False)
         pass
+    """
+        
+   
     
-    def mTest(self, evt):
-        obj = evt.GetEventObject().Parent.yy
-        print obj
-        print "hello"
+    
+    
+    
 
 
 
