@@ -5,7 +5,7 @@ from datetime import datetime, date
 import calendar
 from collections import OrderedDict
 import wx.grid as gridlib
-import xlrd
+#import xlrd
 from matplotlib.cbook import Null
 #import xlsgrid
 #import numpy
