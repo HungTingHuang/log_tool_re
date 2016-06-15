@@ -11,11 +11,17 @@ import sys
 import time
 from wx import SpinButton
 from model import Model
-
+from view import View
+import openpyxl
+import openpyxl.styles as xl_sty
+from openpyxl.styles import Font, Color
+from openpyxl.styles import colors
+from collections import OrderedDict
+from bsddb.dbtables import LikeCond
 
 class GridDataPage(wx.Panel):
-    def __init__(self, parent, page_name, filename, cmd, grid_row_limit):
-        
+    def __init__(self, parent, page_name, filename, cmd, grid_row_limit, args, args_index):
+         
         ##Panel Setting
         self.mPage = wx.Panel(parent, 
                          wx.ID_ANY, 
@@ -35,9 +41,12 @@ class GridDataPage(wx.Panel):
         
         
         self.m_model = Model()
+        
+        self.m_progress = args
         self.parse = model.LogParse(filename)
         
-        self.cmd = cmd
+        self.mPage.cmd = cmd
+        self.mPage.page_name = page_name
         #mPage.m_id = 
         #init data preview
         self.mPage.filename = filename
@@ -45,11 +54,11 @@ class GridDataPage(wx.Panel):
         self.mPage.m_data_row_limit = grid_row_limit
         
         self.mPage.m_data = self.m_model.GetRowRangeData(self.mPage.filename,
-                                                         self.cmd,
+                                                         self.mPage.cmd,
                                                          self.mPage.m_data_row_limit, 
                                                          self.mPage.m_data_offset)
         
-        self.mPage.m_data_len = self.parse.find_total_row_number(filename, self.cmd)
+        self.mPage.m_data_len = self.parse.find_total_row_number(self.mPage.filename, self.mPage.cmd)
         self.mPage.m_grid_title = self.mPage.m_data[0]
         self.mPage.m_grid_title_len = len(self.mPage.m_data[0])
         #self.mPage.m_data = self.mPage.m_data[1]
@@ -58,7 +67,7 @@ class GridDataPage(wx.Panel):
         self.mPage.m_max_page_number = 0
         
         if self.mPage.m_data_len > self.mPage.m_data_row_limit:
-            self.mPage.m_max_page_number = self.mPage.m_data_len/self.mPage.m_data_row_limit
+            self.mPage.m_max_page_number = self.mPage.m_data_len//self.mPage.m_data_row_limit
             if not self.mPage.m_data_len/self.mPage.m_data_row_limit == 0:
                 self.mPage.m_max_page_number += 1
             else:
@@ -125,14 +134,95 @@ class GridDataPage(wx.Panel):
         
         parent.Bind(wx.EVT_SPIN_UP, self.OnSpinUp, self.spinButton)
         parent.Bind(wx.EVT_SPIN_DOWN, self.OnSpinDown, self.spinButton)
-        parent.Bind(wx.EVT_BUTTON, self.OnExport, exportButton)
+        parent.Bind(wx.EVT_BUTTON, self.OnExportExcel, exportButton)
         pass
+            
     
-    def OnExport(self, evt):
-        print 'hello'
+    #callback export excel
+    def OnExportExcel(self, evt):
+        
+        projectName = self.mPage.page_name.partition('.d')[0] 
+        #exportFileName = projectName.replace(': ', '_') + '.xlsx'
+        exportFileName = projectName.replace(': ', '_') + '.csv'
+        #excel_rows_max_limit = 8192
+        #excel_offset = 0
+        #sheet_count = 0
+        #progress_value = 10
+        #progress_value_offset = 0
+        #sheet_index = 0
+        
+        #start_row = 0
+        #start_col = 0
+        #self.m_progress.SetValue(int(10))
+        
+        doc = open(exportFileName, 'w')
+        
+        data_total_rows = self.parse.find_total_row_number(self.mPage.filename, 
+                                                           self.mPage.cmd)
+        
+        
+        #self.m_progress.SetValue(int(20))
+        data = self.m_model.GetRowRangeData(self.mPage.filename,
+                                                self.mPage.cmd,
+                                                data_total_rows, 
+                                                0)
+        #self.m_progress.SetValue(int(70))
+        
+        for row in data:
+            for value in row:
+                doc.write(str(value))
+                doc.write(str(','))
+            doc.write(str('\n'))
+        
+        #self.m_progress.SetValue(int(90))
+        doc.close()
+        
+        
+        
+        '''
+        data_total_rows = self.parse.find_total_row_number(self.mPage.filename, 
+                                                           self.mPage.cmd)
+        
+        if data_total_rows >= excel_rows_max_limit:
+            sheet_count = data_total_rows/excel_rows_max_limit
+            if not data_total_rows % excel_rows_max_limit == 0:
+                sheet_count+=1
+            else:
+                pass
+        else:
+            sheet_count = 1
+            pass
+        progress_value_offset = 80/sheet_count
+        
+        doc = openpyxl.Workbook()
+        sht_active = doc.active
+        for sht_index in range(sheet_count):
+            sht_active.title = str(sht_index)
+            
+            data = self.m_model.GetRowRangeData(self.mPage.filename,
+                                                self.mPage.cmd,
+                                                excel_rows_max_limit, 
+                                                excel_offset)
+            
+            for row_index, row_data in enumerate(data):
+                
+                for col_index, value_t in enumerate(row_data):
+                    sht_active.cell(column = start_col + col_index + 1,
+                                    row= start_row + row_index + 1,
+                                    value = value_t)
+            excel_offset += excel_rows_max_limit
+            sht_active = doc.create_sheet()
+            progress_value += progress_value_offset
+            self.m_progress.SetValue(progress_value)
+        
+        doc.save(exportFileName)
+        '''
+       
+        #self.m_progress.SetValue(int(100))
         pass
     
     def OnSpinUp(self, evt):
+        
         row_limit = self.mPage.m_data_row_limit
         if self.mPage.m_current_page_number <= self.mPage.m_max_page_number and self.mPage.m_current_page_number >= self.mPage.m_min_page_number:
             if self.mPage.m_current_page_number == self.mPage.m_max_page_number:
@@ -151,7 +241,7 @@ class GridDataPage(wx.Panel):
             pass
         
         self.mPage.m_data = self.m_model.GetRowRangeData(self.mPage.filename,
-                                                         self.cmd, 
+                                                         self.mPage.cmd, 
                                                          row_limit, 
                                                          self.mPage.m_data_offset)
         self.spinText.SetValue(str(self.mPage.m_current_page_number))
@@ -183,7 +273,7 @@ class GridDataPage(wx.Panel):
             pass
         
         self.mPage.m_data = self.m_model.GetRowRangeData(self.mPage.filename,
-                                                         self.cmd, 
+                                                         self.mPage.cmd, 
                                                          row_limit, 
                                                          self.mPage.m_data_offset)
         
@@ -386,9 +476,9 @@ class Controller:
         self.current_select_file_path = None
         self.current_select_file_daytime = None
         
-        self.lock = threading.Lock()
+        #self.lock = threading.Lock()
         
-        
+        self.cmd = 'SELECT * FROM log_raw'
         #grid parameter
         self.grid_max_colume_number = 0
         self.grid_max_row_number = 8192
@@ -410,6 +500,14 @@ class Controller:
         
         
         #notebook_panel_01
+        #ctrl panel_01 1f
+        self.src_fifter = ''
+        self.state_fifter = ''
+        self.level_fifter = ''
+        self.m_view.Bind(wx.EVT_TEXT, self.OntcSrcChanged, self.m_view.m_np1_1f_tc_src)
+        self.m_view.Bind(wx.EVT_TEXT, self.OntcStateChanged, self.m_view.m_np1_1f_tc_state)
+        self.m_view.Bind(wx.EVT_TEXT, self.OnLevelSrcChanged, self.m_view.m_np1_1f_tc_level)
+        #ctrl panel_01 2f
         self.hl_hr = 0
         self.hl_mm = 0
         self.ll_hr = 0
@@ -420,12 +518,22 @@ class Controller:
         self.m_view.Bind(wx.EVT_CHOICE, self.OnNPLLchoice, self.m_view.m_np1_choice_02)
         
         self.m_view.Bind(wx.EVT_CHECKBOX, self.OnNPcheckBox, self.m_view.m_np1_checkBox_01)
-        self.m_view.Bind(wx.EVT_BUTTON, self.OnNPbutton, self.m_view.m_np1_button_01)
-
+        #self.m_view.Bind(wx.EVT_BUTTON, self.OnNPbutton, self.m_view.m_np1_button_01)
+        #ctrl panel_01 3f
+        self.m_view.m_np1_3f_tc_cmd.SetValue(self.cmd)
+        self.like_fifter = ''
+        self.m_view.Bind(wx.EVT_TEXT, self.OntcLIKEChanged, self.m_view.m_np1_3f_tc_like)
+        
+        self.m_view.Bind(wx.EVT_CHECKBOX, self.OncbCMDOnlyReady, self.m_view.m_np1_3f_cb_cmd)
+        self.m_view.Bind(wx.EVT_TEXT, self.OntcCMDChanged, self.m_view.m_np1_3f_tc_cmd)
+        
+        self.m_view.Bind(wx.EVT_BUTTON, self.OnbtnReset, self.m_view.m_np1_3f_btn_reset)
+        self.m_view.Bind(wx.EVT_BUTTON, self.OnbtnQuery, self.m_view.m_np1_3f_btn_query)
+        
+        #self.m_view.Bind(wx.EVT_TEXT, self.OntcCMDChanged, self.m_view.m_np1_3f_tc_cmd)
+        
         self.m_view.Show()
       
-    
-    #evt aui notebook
     def OnANBPageChanged(self, evt):
         pageID = evt.GetSelection()
         pageName = self.m_view.m_auimanager.GetPageText(pageID)
@@ -436,6 +544,7 @@ class Controller:
         #print pageName, pageID
         pass
     
+    
     #evt dir picker
     def OnDirSelected(self, evt):
         tree = self.m_view.m_treectrl
@@ -444,8 +553,7 @@ class Controller:
         tree.SetItemImage(root, tree.fldridx, wx.TreeItemIcon_Normal)
         tree.SetItemImage(root, tree.fldropenidx, wx.TreeItemIcon_Expanded)
         tree.SetItemHasChildren(root, True)    
-        pass
-    
+        pass  
     def OnSelChanged(self, evt):
         itemPath = self.mGetPathOnItem(evt.GetItem())
         itemName = self.m_view.m_treectrl.GetItemText(evt.GetItem())
@@ -463,13 +571,11 @@ class Controller:
             self.current_select_file_daytime = log.find_current_project_daytime(itemPath)
         else:
             pass  
-        pass
     
     def OnItemCollapsed(self, evt):
         item = evt.GetItem()
         self.m_view.m_treectrl.DeleteChildren(item)
-        pass
-    
+        pass    
     def OnItemActivated(self, evt):
         tree = self.m_view.m_treectrl
         itemName = self.m_view.m_treectrl.GetItemText(evt.GetItem())
@@ -496,7 +602,9 @@ class Controller:
                              page_name, 
                              itemPath,
                              self.m_model.GetFullDataCmd(itemPath),
-                             self.grid_max_row_number)
+                             self.grid_max_row_number,
+                             self.m_view.m_progress,
+                             0)
                 
                 
                 '''
@@ -529,10 +637,8 @@ class Controller:
                 pass
                 '''
         pass
-    
     def OnItemExpanded(self, evt):
-        pass
-    
+        pass     
     def OnItemExpanding(self, evt):
         item = evt.GetItem()
         tree = self.m_view.m_treectrl
@@ -554,7 +660,173 @@ class Controller:
             pass
         pass
     #evt notebook panel 01
+
     
+    
+    
+    def OntcSrcChanged(self, evt):
+        
+        text = evt.GetString()
+        self.src_fifter = ''
+        if text:
+            for value in text.split(','):
+                if not value == '' :
+                    self.src_fifter += 'src=%s'%value
+                    self.src_fifter += ' OR '
+                else:
+                    pass
+            self.src_fifter = self.src_fifter[:-4]
+        
+        self.OntcCMDUpdate()
+        
+        pass
+    def OntcStateChanged(self, evt):
+        
+        text = evt.GetString()
+        self.state_fifter = ''
+        if text:
+            for value in text.split(','):
+                if not value == '' :
+                    self.state_fifter += 'state=%s'%value
+                    self.state_fifter += ' OR '
+                else:
+                    pass
+            self.state_fifter = self.state_fifter[:-4]
+        
+        self.OntcCMDUpdate()
+        pass
+    def OnLevelSrcChanged(self, evt):
+        
+        text = evt.GetString()
+        self.level_fifter = ''
+        if text:
+            for value in text.split(','):
+                if not value == '' :
+                    self.level_fifter += 'level=%s'%value
+                    self.level_fifter += ' OR '
+                else:
+                    pass
+            self.level_fifter = self.level_fifter[:-4]
+        
+        self.OntcCMDUpdate()
+        pass
+    
+    def OntcLIKEChanged(self, evt):
+        text = evt.GetString()
+        self.like_fifter = ''
+        if text:
+            for value in text.split(','):
+                if not value == '' :
+                    self.like_fifter += "msg LIKE '%%%s%%'"%value
+                    self.like_fifter += ' OR '
+                else:
+                    pass
+            self.like_fifter = self.like_fifter[:-4]
+        
+        self.OntcCMDUpdate()
+        
+        pass
+    
+    def OncbCMDOnlyReady(self, evt):
+        #if evt.getValue()
+        if evt.IsChecked():
+            self.m_view.m_np1_1f_tc_src.SetEditable(False)
+            self.m_view.m_np1_1f_tc_state.SetEditable(False)
+            self.m_view.m_np1_1f_tc_level.SetEditable(False)
+            self.m_view.m_np1_3f_tc_like.SetEditable(False)
+            
+            self.m_view.m_np1_3f_tc_cmd.SetEditable(True)
+        else:
+            
+            self.m_view.m_np1_1f_tc_src.SetEditable(True)
+            self.m_view.m_np1_1f_tc_state.SetEditable(True)
+            self.m_view.m_np1_1f_tc_level.SetEditable(True)
+            self.m_view.m_np1_3f_tc_like.SetEditable(True)
+            
+            self.m_view.m_np1_3f_tc_cmd.SetEditable(False)
+        
+        pass
+    def OntcCMDUpdate(self):
+        text = self.m_view.m_np1_3f_tc_cmd.GetValue()
+        
+        src = self.src_fifter
+        state = self.state_fifter
+        lev = self.level_fifter
+        
+        like = self.like_fifter
+        
+        _list =[src, state, lev ] 
+        
+        base = text.partition(' WHERE ')[0]
+        
+        
+        fifter = ''
+        for value in _list:
+            if not value =='':
+                if not fifter =='':
+                    fifter += ' AND '
+                fifter += value
+        
+        
+        
+        
+        
+        if like:
+            if src or state or lev:
+                base = base + ' WHERE ' + '(' + fifter + ')' + ' AND ' + '(' + like + ')'
+            else:
+                base = base + ' WHERE ' + like
+        else:
+            if src or state or lev:
+                base = base + ' WHERE ' + fifter
+            else:
+                pass
+            
+        
+        self.m_view.m_np1_3f_tc_cmd.SetValue(base)
+        
+        pass
+    def OntcCMDChanged(self, evt):
+        
+        text = evt.GetString()
+        self.cmd = text
+        pass
+    
+    def OnbtnReset(self, evt):
+        self.cmd = 'SELECT * FROM log_raw'
+        
+        self.src_fifter = ''
+        self.state_fifter = ''
+        self.level_fifter = ''
+        self.m_view.m_np1_1f_tc_src.SetValue('')
+        self.m_view.m_np1_1f_tc_state.SetValue('')
+        self.m_view.m_np1_1f_tc_level.SetValue('')
+        self.m_view.m_np1_1f_tc_src.SetEditable(True)
+        self.m_view.m_np1_1f_tc_state.SetEditable(True)
+        self.m_view.m_np1_1f_tc_level.SetEditable(True)
+        
+        self.like_fifter = ''
+        self.m_view.m_np1_3f_tc_like.SetValue('')
+        self.m_view.m_np1_3f_cb_cmd.SetValue(False)
+        self.m_view.m_np1_3f_tc_cmd.SetEditable(False)
+        self.m_view.m_np1_3f_tc_cmd.SetValue(self.cmd)
+        
+        pass
+    def OnbtnQuery(self, evt):
+        if not self.current_select_file_path:
+            pass
+        else:
+            page_name = "%s: %s"%(self.current_select_project_name, 
+                                  self.current_select_file_name)
+            GridDataPage(self.m_view.m_auimanager, 
+                             page_name, 
+                             self.current_select_file_path, 
+                             self.cmd, 
+                             self.grid_max_row_number,
+                             0,
+                             0)
+        pass
+        
     def OnNPHLchoice(self, evt):
         self.hl_hr = int(self.m_view.m_np1_choice_03.GetStringSelection().split(' ')[0])
         self.hl_mm = int(self.m_view.m_np1_choice_04.GetStringSelection().split(' ')[0])
@@ -563,9 +835,7 @@ class Controller:
     def OnNPLLchoice(self, evt):
         self.ll_hr = int(self.m_view.m_np1_choice_01.GetStringSelection().split(' ')[0])
         self.ll_mm = int(self.m_view.m_np1_choice_02.GetStringSelection().split(' ')[0])
-        
         pass
-    
     def OnNPbutton(self, evt):
         if not self.current_select_file_path:
             pass
@@ -601,13 +871,13 @@ class Controller:
                              page_name, 
                              self.current_select_file_path, 
                              cmd, 
-                             self.grid_max_row_number)
+                             self.grid_max_row_number,
+                             self.m_view.m_progress,
+                             0)
 
             else:
                 pass
         pass
-    
-    
     def OnNPcheckBox(self, evt):
         if evt.IsChecked():
             self.m_view.m_np1_staticText_01.Enable()
@@ -622,6 +892,7 @@ class Controller:
         pass
     
     #@staticmethod
+    
     def mGetPathOnItem(self, item):
         tree = self.m_view.m_treectrl
         currentPath = tree.GetItemText(item)

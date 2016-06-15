@@ -6,7 +6,7 @@ import calendar
 from collections import OrderedDict
 import wx.grid as gridlib
 #import xlrd
-from matplotlib.cbook import Null
+
 #import xlsgrid
 #import numpy
 
@@ -15,9 +15,16 @@ class HugeTable(gridlib.PyGridTableBase):
     def __init__(self, title, data, rows, cols):
         gridlib.PyGridTableBase.__init__(self)
         self.title = title
-        self.data = data
         
-        self.row_count = rows
+        self.data_souce = data
+        self.row_count_source = rows
+        
+        #remve first row
+        self.data = self.data_souce[1:]
+        self.row_count = self.row_count_source-1
+        
+        
+        
         self.col_count = cols
         
       

@@ -281,43 +281,276 @@ class View(wx.Frame):
         
         
         
-        #panel #01
+        #panel #01 Data Mining
+#===================================================================================================================#      
+        
+        
         notebook.panel_01 = wx.Panel(notebook, 
                                      wx.ID_ANY, 
                                      wx.DefaultPosition, 
                                      wx.DefaultSize, 
                                      wx.TAB_TRAVERSAL)
+        
         vSizer_panel_01 = wx.BoxSizer(wx.VERTICAL)
+        hSizer_nb1_1f = wx.BoxSizer( wx.HORIZONTAL )
+        hSizer_nb1_2f = wx.BoxSizer( wx.HORIZONTAL )
+        hSizer_nb1_3f = wx.BoxSizer( wx.HORIZONTAL )
+        
+        vSizer_panel_01.Add( hSizer_nb1_1f, 1, wx.EXPAND, 5 )
+        vSizer_panel_01.Add( hSizer_nb1_2f, 1, wx.EXPAND|wx.RIGHT|wx.LEFT, 5 )
+        vSizer_panel_01.Add( hSizer_nb1_3f, 0, wx.BOTTOM|wx.EXPAND|wx.ALIGN_RIGHT, 1 )
+        #hSizer_nb1_1f ==============================================================================================
+        #hSizer_nb1_1f_src start
+        hSizer_nb1_1f_src = wx.BoxSizer( wx.HORIZONTAL )
+        st_nb1_1f_src = wx.StaticText( notebook.panel_01, 
+                                       wx.ID_ANY, 
+                                       u"SRC", 
+                                       wx.DefaultPosition, 
+                                       wx.DefaultSize, 0 )
+        st_nb1_1f_src.Wrap( -1 )
+        hSizer_nb1_1f_src.Add( st_nb1_1f_src, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.LEFT, 5 )
+        
+        tc_nb1_1f_sc = wx.TextCtrl( notebook.panel_01, 
+                                    wx.ID_ANY, 
+                                    wx.EmptyString, 
+                                    wx.DefaultPosition, 
+                                    wx.DefaultSize, 0 )
+        
+        hSizer_nb1_1f_src.Add( tc_nb1_1f_sc, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.LEFT, 5 )
+        hSizer_nb1_1f.Add( hSizer_nb1_1f_src, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 5 )
+        
+        #hSizer_nb1_1f_src end
+        vst_nb1_1f_1 = wx.StaticLine( notebook.panel_01, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_VERTICAL )
+        hSizer_nb1_1f.Add( vst_nb1_1f_1, 0, wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        #hSizer_nb1_1f_state start
+        hSizer_nb1_1f_state = wx.BoxSizer( wx.HORIZONTAL )
+        
+        st_nb1_1f_state = wx.StaticText( notebook.panel_01, 
+                                         wx.ID_ANY, 
+                                         u"STATE", 
+                                         wx.DefaultPosition, 
+                                         wx.DefaultSize, 0 )
+        st_nb1_1f_state.Wrap( -1 )
+        hSizer_nb1_1f_state.Add( st_nb1_1f_state, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.LEFT, 5 )
+        
+        tc_nb1_1f_state = wx.TextCtrl( notebook.panel_01, 
+                                            wx.ID_ANY, 
+                                            wx.EmptyString, 
+                                            wx.DefaultPosition, 
+                                            wx.DefaultSize, 0 )
+        
+        hSizer_nb1_1f_state.Add( tc_nb1_1f_state, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.LEFT, 5 )
+        hSizer_nb1_1f.Add( hSizer_nb1_1f_state, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 5 )
+        #hSizer_nb1_1f_state end
+        vst_nb1_1f_2 = wx.StaticLine( notebook.panel_01,  wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_VERTICAL )
+        hSizer_nb1_1f.Add( vst_nb1_1f_2, 0, wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        #hSizer_nb1_1f_level start
+        hSizer_nb1_1f_level = wx.BoxSizer( wx.HORIZONTAL )
+        
+        st_nb1_1f_level = wx.StaticText( notebook.panel_01, 
+                                         wx.ID_ANY, 
+                                         u"LEVEL", 
+                                         wx.DefaultPosition, 
+                                         wx.DefaultSize, 0 )
+        st_nb1_1f_level.Wrap( -1 )
+        hSizer_nb1_1f_level.Add( st_nb1_1f_level, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.LEFT, 5 )
+        
+        tc_nb1_1f_level = wx.TextCtrl( notebook.panel_01, 
+                                       wx.ID_ANY, 
+                                       wx.EmptyString, 
+                                       wx.DefaultPosition, 
+                                       wx.DefaultSize, 0 )
+        
+        hSizer_nb1_1f_level.Add( tc_nb1_1f_level, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.LEFT, 5 )
+        hSizer_nb1_1f.Add( hSizer_nb1_1f_level, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 5 )
+        #hSizer_nb1_1f_level end
+        vst_nb1_1f_3 = wx.StaticLine( notebook.panel_01, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_VERTICAL )
+        hSizer_nb1_1f.Add( vst_nb1_1f_3, 0, wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        #hSizer_nb1_1f_bk1 start
+        hSizer_nb1_1f_bk1 = wx.BoxSizer( wx.HORIZONTAL )
+        hSizer_nb1_1f_bk1.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
+        hSizer_nb1_1f.Add( hSizer_nb1_1f_bk1, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 5 )
+        #hSizer_nb1_1f_bk1 end
+        #hSizer_nb1_1f_bk2 start
+        hSizer_nb1_1f_bk2 = wx.BoxSizer( wx.HORIZONTAL )
+        hSizer_nb1_1f_bk2.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
+        hSizer_nb1_1f.Add( hSizer_nb1_1f_bk2, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 5 )
+        #hSizer_nb1_1f_bk2 end
+        #hSizer_nb1_2f ==============================================================================================
+        #hSizer_nb1_2f_range start
+        hSizer_nb1_2f_range = wx.BoxSizer( wx.HORIZONTAL )
+        
+        cb_nb1_2f_range = wx.CheckBox( notebook.panel_01, 
+                                       wx.ID_ANY, 
+                                       u"  RANGE", 
+                                       wx.DefaultPosition, 
+                                       wx.DefaultSize, 0 )
+        cb_nb1_2f_range.SetValue(True) 
+        hSizer_nb1_2f_range.Add( cb_nb1_2f_range, 0, wx.ALIGN_CENTER_VERTICAL, 5 )
+        
+        m_choice_hr = []
+        for hh in range(0, 24):
+            m_choice_hr.append('%s hr'%hh)
+        m_choice_mm = []
+        for mm in range(0, 60):
+            m_choice_mm.append('%s min'%mm)
+        
+        
+        
+        c_nb1_2f_lh = wx.Choice( notebook.panel_01, 
+                                 wx.ID_ANY, 
+                                 wx.DefaultPosition, 
+                                 wx.DefaultSize, 
+                                 m_choice_hr, 0 )
+        c_nb1_2f_lh.SetSelection( 0 )
+        hSizer_nb1_2f_range.Add( c_nb1_2f_lh, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.LEFT, 5 )
+        
+        c_nb1_2f_lm = wx.Choice( notebook.panel_01, 
+                                 wx.ID_ANY, 
+                                 wx.DefaultPosition, 
+                                 wx.DefaultSize, 
+                                 m_choice_mm, 0 )
+        c_nb1_2f_lm.SetSelection( 0 )
+        hSizer_nb1_2f_range.Add( c_nb1_2f_lm, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.LEFT, 5 )
+        
+        tc_nb1_2f_l = wx.TextCtrl( notebook.panel_01, 
+                                   wx.ID_ANY, 
+                                   wx.EmptyString, 
+                                   wx.DefaultPosition, 
+                                   wx.DefaultSize, 0 )
+        hSizer_nb1_2f_range.Add( tc_nb1_2f_l, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.LEFT, 5 )
+        
+        st_nb1_2f_between = wx.StaticText( notebook.panel_01, wx.ID_ANY, u"TO", wx.DefaultPosition, wx.DefaultSize, 0 )
+        st_nb1_2f_between.Wrap( -1 )
+        hSizer_nb1_2f_range.Add( st_nb1_2f_between, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.LEFT, 5 )
+        
+            
+        c_nb1_2f_hh = wx.Choice( notebook.panel_01, 
+                                 wx.ID_ANY, 
+                                 wx.DefaultPosition, 
+                                 wx.DefaultSize, 
+                                 m_choice_hr, 0 )
+        c_nb1_2f_hh.SetSelection( 0 )
+        hSizer_nb1_2f_range.Add( c_nb1_2f_hh, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.LEFT, 5 )
+        
+        c_nb1_2f_hm = wx.Choice( notebook.panel_01, 
+                                 wx.ID_ANY, 
+                                 wx.DefaultPosition, 
+                                 wx.DefaultSize, 
+                                 m_choice_mm, 0 )
+        c_nb1_2f_hm.SetSelection( 0 )
+        hSizer_nb1_2f_range.Add( c_nb1_2f_hm, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.LEFT, 5 )
+        
+        tc_nb1_2f_h = wx.TextCtrl( notebook.panel_01, 
+                                   wx.ID_ANY, 
+                                   wx.EmptyString, 
+                                   wx.DefaultPosition, 
+                                   wx.DefaultSize, 0 )
+        hSizer_nb1_2f_range.Add( tc_nb1_2f_h, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.LEFT, 5 )
+        
+        
+        hSizer_nb1_2f.Add( hSizer_nb1_2f_range, 3, wx.EXPAND, 5 )
+        #hSizer_nb1_2f_range end
+        vst_nb1_2f_1 = wx.StaticLine( notebook.panel_01, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_VERTICAL )
+        hSizer_nb1_2f.Add( vst_nb1_2f_1, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
+        #hSizer_nb1_2f_count start
+        hSizer_nb1_2f_count = wx.BoxSizer( wx.HORIZONTAL )
+        
+        st_nb1_2f_count = wx.StaticText( notebook.panel_01, 
+                                         wx.ID_ANY, 
+                                         u"ROW COUNT:", 
+                                         wx.DefaultPosition, 
+                                         wx.DefaultSize, 0 )
+        st_nb1_2f_count.Wrap( -1 )
+        hSizer_nb1_2f_count.Add( st_nb1_2f_count, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        
+        silder_nb1_2f_count = wx.Slider( notebook.panel_01, 
+                                         wx.ID_ANY, 
+                                         0, 0, 16384, 
+                                         wx.DefaultPosition, 
+                                         wx.Size( -1,10 ), 
+                                         wx.SL_HORIZONTAL|wx.SL_LABELS)
+        hSizer_nb1_2f_count.Add( silder_nb1_2f_count, 1, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5 )
+        
+        
+        hSizer_nb1_2f.Add( hSizer_nb1_2f_count, 1, wx.EXPAND, 5 )
+        #hSizer_nb1_2f_count end
+        #hSizer_nb1_3f ==============================================================================================
+        #hSizer_nb1_3f_like start
+        hSizer_nb1_3f_like = wx.BoxSizer( wx.HORIZONTAL )
+        
+        st_nb1_3f_like = wx.StaticText( notebook.panel_01, 
+                                        wx.ID_ANY, 
+                                        u"MSG LIKE", 
+                                        wx.DefaultPosition, 
+                                        wx.DefaultSize, 0 )
+        st_nb1_3f_like.Wrap( -1 )
+        hSizer_nb1_3f_like.Add( st_nb1_3f_like, 0, wx.RIGHT|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5 )
+        
+        tc_nb1_3f_like = wx.TextCtrl( notebook.panel_01, 
+                                      wx.ID_ANY, 
+                                      wx.EmptyString, 
+                                      wx.DefaultPosition, 
+                                      wx.DefaultSize, 0 )
+        hSizer_nb1_3f_like.Add( tc_nb1_3f_like, 1, wx.RIGHT|wx.LEFT, 5 )
+        
+        
+        hSizer_nb1_3f.Add( hSizer_nb1_3f_like, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 5 )
+        #hSizer_nb1_3f_like end
+        vst_nb1_3f_1 = wx.StaticLine( notebook.panel_01, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_VERTICAL )
+        hSizer_nb1_3f.Add( vst_nb1_3f_1, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
+        #hSizer_nb1_3f_cmd start
+        hSizer_nb1_3f_cmd = wx.BoxSizer( wx.HORIZONTAL )
+        
+        cb_nb1_3f_cmd = wx.CheckBox( notebook.panel_01, 
+                                     wx.ID_ANY, 
+                                     wx.EmptyString, 
+                                     wx.DefaultPosition, 
+                                     wx.DefaultSize, 0 )
+        cb_nb1_3f_cmd.SetValue(False)
+        hSizer_nb1_3f_cmd.Add( cb_nb1_3f_cmd, 0, wx.RIGHT|wx.LEFT|wx.ALIGN_CENTER_VERTICAL, 5 )
+        
+        tc_nb1_3f_cmd = wx.TextCtrl( notebook.panel_01, 
+                                     wx.ID_ANY, 
+                                     wx.EmptyString, 
+                                     wx.DefaultPosition, 
+                                     wx.DefaultSize, 0)
+        tc_nb1_3f_cmd.SetEditable(False)
+        #tc_nb1_3f_cmd.SetStyle(tc_nb1_3f_cmd.GetRange, wx.TE_READONLY)
+        #tc_nb1_3f_cmd.SetBackgroundColour((255,23,23))
+        
+        hSizer_nb1_3f_cmd.Add( tc_nb1_3f_cmd, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.LEFT, 5 )
+        hSizer_nb1_3f_cmd.AddSpacer( ( 15, 0), 0, wx.EXPAND, 5 )
+        
+        hSizer_nb1_3f.Add( hSizer_nb1_3f_cmd, 4, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 5 )
+        #hSizer_nb1_3f_cmd end
+        #vst_nb1_3f_2 = wx.StaticLine( notebook.panel_01, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_VERTICAL )
+        #hSizer_nb1_3f.Add( vst_nb1_3f_2, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
+        #hSizer_nb1_3f_btn start
+        hSizer_nb1_3f_btn = wx.BoxSizer( wx.HORIZONTAL )
+        #hSizer_nb1_3f_btn.AddSpacer( ( 15, 0), 0, wx.EXPAND, 5 )
+        btn_nb1_3f_reset = wx.Button( notebook.panel_01, 
+                                      wx.ID_ANY, 
+                                      u"RESET", 
+                                      wx.DefaultPosition, 
+                                      wx.DefaultSize, 0 )
+        hSizer_nb1_3f_btn.Add( btn_nb1_3f_reset, 0, wx.ALIGN_CENTER_VERTICAL, 5 )
+        
+        btn_nb1_3f_query = wx.Button( notebook.panel_01, 
+                                      wx.ID_ANY, 
+                                      u"QUERY", 
+                                      wx.DefaultPosition, 
+                                      wx.DefaultSize, 0 )
+        hSizer_nb1_3f_btn.Add( btn_nb1_3f_query, 0, wx.ALIGN_CENTER_VERTICAL, 5 )
+        
+        
+        hSizer_nb1_3f.Add( hSizer_nb1_3f_btn, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.LEFT, 5 )
+        #hSizer_nb1_3f_btn end
+        
+        
+        
         '''
-        notebook.panel_01.fgSizer_1 = wx.FlexGridSizer(0, 2, 0, 50)
-        notebook.panel_01.fgSizer_1.SetFlexibleDirection( wx.BOTH )
-        notebook.panel_01.fgSizer_1.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
         
-        
-        notebook.panel_01.active_proj = wx.StaticText(notebook.panel_01, 
-                                                      wx.ID_ANY, 
-                                                      u'', 
-                                                      wx.DefaultPosition, 
-                                                      wx.DefaultSize, 
-                                                      0)
-        notebook.panel_01.active_proj.Wrap(-1)
-        notebook.panel_01.fgSizer_1.Add(notebook.panel_01.active_proj, 
-                                        1, 
-                                        wx.EXPAND)
-        
-        notebook.panel_01.sql_command = wx.StaticText(notebook.panel_01,
-                                                      wx.ID_ANY,
-                                                      u'',
-                                                      wx.DefaultPosition,
-                                                      wx.DefaultSize,
-                                                      0)
-        notebook.panel_01.sql_command.Wrap(-1)
-        notebook.panel_01.fgSizer_1.Add(notebook.panel_01.sql_command, 
-                                        1, 
-                                        wx.EXPAND)
-        
-        vSizer_panel_01.Add(notebook.panel_01.fgSizer_1, 0, 0, 5)
-        '''
         notebook.panel_01.fgSizer_2 = wx.FlexGridSizer( 0, 8, 0, 0 )
         notebook.panel_01.fgSizer_2.SetFlexibleDirection( wx.BOTH )
         notebook.panel_01.fgSizer_2.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
@@ -371,19 +604,40 @@ class View(wx.Frame):
         vSizer_panel_01.Add(notebook.panel_01.fgSizer_2, 0, 0, 5)
         
         notebook.panel_01.vSizer = wx.BoxSizer( wx.VERTICAL )
-        notebook.panel_01.button_01 = wx.Button( notebook.panel_01, wx.ID_ANY, u"send", wx.DefaultPosition, wx.Size(60, 15), 0 )
+        notebook.panel_01.button_01 = wx.Button( notebook.panel_01, wx.ID_ANY, u"Query", wx.DefaultPosition, wx.Size(60, 15), 0 )
         notebook.panel_01.vSizer.Add( notebook.panel_01.button_01, 1, wx.ALIGN_RIGHT, 5 )
         vSizer_panel_01.Add( notebook.panel_01.vSizer, 1, wx.ALIGN_RIGHT, 5 )
-        
-        
+        '''
         
         notebook.panel_01.SetSizer(vSizer_panel_01)
         notebook.panel_01.Layout()
         vSizer_panel_01.Fit(notebook.panel_01)
         notebook.AddPage(notebook.panel_01,
-                         u"a page",
+                         u"Data Mining",
                          False)
         
+        #ctrl panel_01
+        #ctrl panel_01 1f
+        self.m_np1_1f_tc_src = tc_nb1_1f_sc
+        self.m_np1_1f_tc_state = tc_nb1_1f_state
+        self.m_np1_1f_tc_level =tc_nb1_1f_level
+        #ctrl panel_01 2f
+        
+        self.m_np1_checkBox_01 = cb_nb1_2f_range
+        self.m_np1_staticText_01 = st_nb1_2f_between
+        self.m_np1_choice_01 = c_nb1_2f_hh
+        self.m_np1_choice_02 = c_nb1_2f_hm
+        self.m_np1_choice_03 = c_nb1_2f_lh
+        self.m_np1_choice_04 = c_nb1_2f_lm
+        
+        #ctrl panel_01 3f
+        self.m_np1_3f_tc_like = tc_nb1_3f_like
+        self.m_np1_3f_cb_cmd = cb_nb1_3f_cmd
+        self.m_np1_3f_tc_cmd = tc_nb1_3f_cmd
+        self.m_np1_3f_btn_reset = btn_nb1_3f_reset
+        self.m_np1_3f_btn_query = btn_nb1_3f_query
+        
+#===================================================================================================================#
         #panel #02
         notebook.panel_02 = wx.Panel(notebook,
                                      wx.ID_ANY,
@@ -391,19 +645,11 @@ class View(wx.Frame):
                                      wx.DefaultSize,
                                      wx.TAB_TRAVERSAL)
         vSizer_panel_02 = wx.BoxSizer( wx.VERTICAL )
-        notebook.panel_02.filepicker = wx.FilePickerCtrl(notebook.panel_02,
-                                                         wx.ID_ANY,
-                                                         wx.EmptyString,
-                                                         u"Select a file",
-                                                         u"*.*",
-                                                         wx.DefaultPosition,
-                                                         wx.DefaultSize,
-                                                         wx.FLP_DEFAULT_STYLE)
-        vSizer_panel_02.Add(notebook.panel_02.filepicker, 0, wx.ALL, 5)
+        
         notebook.panel_02.SetSizer(vSizer_panel_02)
         notebook.panel_02.Layout()
         vSizer_panel_02.Fit(notebook.panel_02)
-        notebook.AddPage(notebook.panel_02, u"a page", False)
+        notebook.AddPage(notebook.panel_02, u"Parsing", False)
         
         #panel #03
         notebook.panel_03 = wx.Panel(notebook,
@@ -411,39 +657,9 @@ class View(wx.Frame):
                                      wx.DefaultPosition,
                                      wx.DefaultSize,
                                      wx.TAB_TRAVERSAL)
-        gSizer_panel_03 = wx.GridSizer( 0, 2, 0, 0 )
-        notebook.panel_03.radio_01 = wx.RadioButton(notebook.panel_03,
-                                                    wx.ID_ANY,
-                                                    u"RadioBtn",
-                                                    wx.DefaultPosition,
-                                                    wx.DefaultSize,
-                                                    0)
-        notebook.panel_03.radio_02 = wx.RadioButton(notebook.panel_03,
-                                                    wx.ID_ANY,
-                                                    u"RadioBtn",
-                                                    wx.DefaultPosition,
-                                                    wx.DefaultSize,
-                                                    0)
-        notebook.panel_03.radio_03 = wx.RadioButton(notebook.panel_03,
-                                                    wx.ID_ANY,
-                                                    u"RadioBtn",
-                                                    wx.DefaultPosition,
-                                                    wx.DefaultSize,
-                                                    0)
-        notebook.panel_03.radio_04 = wx.RadioButton(notebook.panel_03,
-                                                    wx.ID_ANY,
-                                                    u"RadioBtn",
-                                                    wx.DefaultPosition,
-                                                    wx.DefaultSize,
-                                                    0)
-        gSizer_panel_03.Add(notebook.panel_03.radio_01, 0, wx.ALL, 5)
-        gSizer_panel_03.Add(notebook.panel_03.radio_02, 0, wx.ALL, 5)
-        gSizer_panel_03.Add(notebook.panel_03.radio_03, 0, wx.ALL, 5)
-        gSizer_panel_03.Add(notebook.panel_03.radio_04, 0, wx.ALL, 5)
-        notebook.panel_03.SetSizer(gSizer_panel_03)
+       
         notebook.panel_03.Layout()
-        gSizer_panel_03.Fit(notebook.panel_03)
-        notebook.AddPage(notebook.panel_03, u"a page", False)
+        notebook.AddPage(notebook.panel_03, u"Data Visualization", False)
         
         #panel 04
         notebook.panel_04 = wx.Panel(notebook,
@@ -454,7 +670,7 @@ class View(wx.Frame):
         vSizer_panel_04 = wx.BoxSizer(wx.VERTICAL)
         notebook.panel_04.Layout()
         vSizer_panel_04.Fit(notebook.panel_04)
-        notebook.AddPage(notebook.panel_04, u"a page", True)
+        notebook.AddPage(notebook.panel_04, u"Report", True)
         
         vSizer_notebook_t.Add(notebook, 0, wx.EXPAND, 5)
         vSizer_notebook.Add( vSizer_notebook_t, 0, wx.EXPAND, 5)
@@ -478,8 +694,15 @@ class View(wx.Frame):
         status_bar.SetFieldsCount(4)
         self.SetStatusBar(status_bar)
         self.m_progress = wx.Gauge(status_bar, range=100)
-        status_bar.AddWidget(self.m_progress, pos=3)
         
+        
+        
+        status_bar.AddWidget(self.m_progress, 
+                             ESB_EXACT_FIT, 
+                             ESB_EXACT_FIT,
+                             pos=3)
+        
+        '''
         menubar = wx.MenuBar(0)
         menu_01 = wx.Menu()
         menubar.Append(menu_01, u"&File")
@@ -488,23 +711,18 @@ class View(wx.Frame):
         menu_03 = wx.Menu()
         menubar.Append(menu_03, u"&About")
         self.SetMenuBar(menubar)
-        
+        '''
         self.Center(wx.BOTH)
         
         self.m_dirpicker = dirpicker
         self.m_treectrl = treectrl
         self.m_auimanager = auimanager
         
-        self.m_np1_checkBox_01 = notebook.panel_01.checkBox
-        self.m_np1_staticText_01 = notebook.panel_01.staticText_1
-        self.m_np1_choice_01 = notebook.panel_01.choice1
-        self.m_np1_choice_02 = notebook.panel_01.choice2
-        self.m_np1_choice_03 = notebook.panel_01.choice3
-        self.m_np1_choice_04 = notebook.panel_01.choice4
-        self.m_np1_button_01 = notebook.panel_01.button_01
+        #self.m_np1_button_01 = notebook.panel_01.button_01
         #self.m_active_proj = notebook.panel_01.active_proj
         #self.m_sql_command = notebook.panel_01.sql_command
         self.m_statusBar = status_bar
+        
         pass
         
    
