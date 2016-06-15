@@ -508,16 +508,25 @@ class Controller:
         self.m_view.Bind(wx.EVT_TEXT, self.OntcStateChanged, self.m_view.m_np1_1f_tc_state)
         self.m_view.Bind(wx.EVT_TEXT, self.OnLevelSrcChanged, self.m_view.m_np1_1f_tc_level)
         #ctrl panel_01 2f
+        self.m_view.m_np1_checkBox_01.SetValue(False)
         self.hl_hr = 0
         self.hl_mm = 0
         self.ll_hr = 0
         self.ll_mm = 0
-        self.m_view.Bind(wx.EVT_CHOICE, self.OnNPHLchoice, self.m_view.m_np1_choice_03)
-        self.m_view.Bind(wx.EVT_CHOICE, self.OnNPHLchoice, self.m_view.m_np1_choice_04)
+        self.m_view.m_np1_choice_03.Disable()
+        self.m_view.m_np1_choice_04.Disable()
+        
+        
         self.m_view.Bind(wx.EVT_CHOICE, self.OnNPLLchoice, self.m_view.m_np1_choice_01)
         self.m_view.Bind(wx.EVT_CHOICE, self.OnNPLLchoice, self.m_view.m_np1_choice_02)
+        self.m_view.Bind(wx.EVT_TEXT, self.OntcHHChanged, self.m_view.m_np1_2f_tc_hh)
+        self.m_view.Bind(wx.EVT_CHOICE, self.OnNPHLchoice, self.m_view.m_np1_choice_03)
+        self.m_view.Bind(wx.EVT_CHOICE, self.OnNPHLchoice, self.m_view.m_np1_choice_04)
+        self.m_view.Bind(wx.EVT_TEXT, self.OntcLLChanged, self.m_view.m_np1_2f_tc_ll)
         
         self.m_view.Bind(wx.EVT_CHECKBOX, self.OnNPcheckBox, self.m_view.m_np1_checkBox_01)
+        
+        self.m_view.Bind(wx.EVT_SLIDER, self.OnSLChanged, self.m_view.m_np1_2f_slider)
         #self.m_view.Bind(wx.EVT_BUTTON, self.OnNPbutton, self.m_view.m_np1_button_01)
         #ctrl panel_01 3f
         self.m_view.m_np1_3f_tc_cmd.SetValue(self.cmd)
@@ -675,7 +684,7 @@ class Controller:
                     self.src_fifter += ' OR '
                 else:
                     pass
-            self.src_fifter = self.src_fifter[:-4]
+            self.src_fifter = '(' + self.src_fifter[:-4] + ')'
         
         self.OntcCMDUpdate()
         
@@ -691,7 +700,7 @@ class Controller:
                     self.state_fifter += ' OR '
                 else:
                     pass
-            self.state_fifter = self.state_fifter[:-4]
+            self.state_fifter = '(' + self.state_fifter[:-4] + ')'
         
         self.OntcCMDUpdate()
         pass
@@ -706,7 +715,7 @@ class Controller:
                     self.level_fifter += ' OR '
                 else:
                     pass
-            self.level_fifter = self.level_fifter[:-4]
+            self.level_fifter = '(' + self.level_fifter[:-4] + ')'
         
         self.OntcCMDUpdate()
         pass
@@ -735,6 +744,15 @@ class Controller:
             self.m_view.m_np1_1f_tc_level.SetEditable(False)
             self.m_view.m_np1_3f_tc_like.SetEditable(False)
             
+            self.m_view.m_np1_checkBox_01.Disable()
+            self.m_view.m_np1_checkBox_01.SetValue(False)
+            self.m_view.m_np1_choice_01.Disable()
+            self.m_view.m_np1_choice_02.Disable()
+            self.m_view.m_np1_choice_03.Disable()
+            self.m_view.m_np1_choice_04.Disable()
+            self.m_view.m_np1_2f_tc_ll.SetEditable(False)
+            self.m_view.m_np1_2f_tc_hh.SetEditable(False)
+            
             self.m_view.m_np1_3f_tc_cmd.SetEditable(True)
         else:
             
@@ -742,6 +760,15 @@ class Controller:
             self.m_view.m_np1_1f_tc_state.SetEditable(True)
             self.m_view.m_np1_1f_tc_level.SetEditable(True)
             self.m_view.m_np1_3f_tc_like.SetEditable(True)
+            
+            self.m_view.m_np1_checkBox_01.Enable()
+            self.m_view.m_np1_checkBox_01.SetValue(False)
+            self.m_view.m_np1_choice_01.Enable()
+            self.m_view.m_np1_choice_02.Enable()
+            self.m_view.m_np1_choice_03.Disable()
+            self.m_view.m_np1_choice_04.Disable()
+            self.m_view.m_np1_2f_tc_ll.SetEditable(True)
+            self.m_view.m_np1_2f_tc_hh.SetEditable(False)
             
             self.m_view.m_np1_3f_tc_cmd.SetEditable(False)
         
@@ -805,11 +832,27 @@ class Controller:
         self.m_view.m_np1_1f_tc_state.SetEditable(True)
         self.m_view.m_np1_1f_tc_level.SetEditable(True)
         
+        self.m_view.m_np1_checkBox_01.Enable()
+        self.m_view.m_np1_checkBox_01.SetValue(False)
+        self.m_view.m_np1_choice_01.Enable()
+        self.m_view.m_np1_choice_02.Enable()
+        self.m_view.m_np1_choice_03.Disable()
+        self.m_view.m_np1_choice_04.Disable()
+        self.m_view.m_np1_2f_tc_ll.SetEditable(True)
+        self.m_view.m_np1_2f_tc_hh.SetEditable(False)
+        
+        self.m_view.m_np1_2f_slider.SetValue(0)
+        #self.m_view.m_np1_2f_slider.SetTickFreq(1,0)
+        
         self.like_fifter = ''
         self.m_view.m_np1_3f_tc_like.SetValue('')
+        self.m_view.m_np1_3f_tc_like.SetEditable(True)
         self.m_view.m_np1_3f_cb_cmd.SetValue(False)
-        self.m_view.m_np1_3f_tc_cmd.SetEditable(False)
+        
         self.m_view.m_np1_3f_tc_cmd.SetValue(self.cmd)
+        
+        self.m_view.m_np1_3f_tc_cmd.SetEditable(False)
+        
         
         pass
     def OnbtnQuery(self, evt):
@@ -827,15 +870,26 @@ class Controller:
                              0)
         pass
         
-    def OnNPHLchoice(self, evt):
-        self.hl_hr = int(self.m_view.m_np1_choice_03.GetStringSelection().split(' ')[0])
-        self.hl_mm = int(self.m_view.m_np1_choice_04.GetStringSelection().split(' ')[0])
         
+    def OntcLLChanged(self, evt):
+        print 'll'
         pass
+    def OntcHHChanged(self, evt):
+        print 'hh'
+        pass
+        
+        
+    
     def OnNPLLchoice(self, evt):
         self.ll_hr = int(self.m_view.m_np1_choice_01.GetStringSelection().split(' ')[0])
         self.ll_mm = int(self.m_view.m_np1_choice_02.GetStringSelection().split(' ')[0])
         pass
+    def OnNPHLchoice(self, evt):
+        self.hl_hr = int(self.m_view.m_np1_choice_03.GetStringSelection().split(' ')[0])
+        self.hl_mm = int(self.m_view.m_np1_choice_04.GetStringSelection().split(' ')[0])
+        print self.hl_hr
+        pass
+    
     def OnNPbutton(self, evt):
         if not self.current_select_file_path:
             pass
@@ -878,16 +932,21 @@ class Controller:
             else:
                 pass
         pass
+    def OnSLChanged(self, evt):
+        print evt.GetInt()
+        pass
     def OnNPcheckBox(self, evt):
-        if evt.IsChecked():
-            self.m_view.m_np1_staticText_01.Enable()
+        if  evt.IsChecked():
+            
             self.m_view.m_np1_choice_03.Enable()
             self.m_view.m_np1_choice_04.Enable()
+            self.m_view.m_np1_2f_tc_hh.SetEditable(True)
             pass
         else:
-            self.m_view.m_np1_staticText_01.Disable()
+            
             self.m_view.m_np1_choice_03.Disable()
             self.m_view.m_np1_choice_04.Disable()
+            self.m_view.m_np1_2f_tc_hh.SetEditable(False)
             pass
         pass
     

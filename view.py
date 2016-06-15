@@ -385,7 +385,7 @@ class View(wx.Frame):
                                        u"  RANGE", 
                                        wx.DefaultPosition, 
                                        wx.DefaultSize, 0 )
-        cb_nb1_2f_range.SetValue(True) 
+        cb_nb1_2f_range.SetValue(False) 
         hSizer_nb1_2f_range.Add( cb_nb1_2f_range, 0, wx.ALIGN_CENTER_VERTICAL, 5 )
         
         m_choice_hr = []
@@ -464,13 +464,13 @@ class View(wx.Frame):
         st_nb1_2f_count.Wrap( -1 )
         hSizer_nb1_2f_count.Add( st_nb1_2f_count, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
         
-        silder_nb1_2f_count = wx.Slider( notebook.panel_01, 
+        slider_nb1_2f_count = wx.Slider( notebook.panel_01, 
                                          wx.ID_ANY, 
                                          0, 0, 16384, 
                                          wx.DefaultPosition, 
                                          wx.Size( -1,10 ), 
                                          wx.SL_HORIZONTAL|wx.SL_LABELS)
-        hSizer_nb1_2f_count.Add( silder_nb1_2f_count, 1, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5 )
+        hSizer_nb1_2f_count.Add( slider_nb1_2f_count, 1, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5 )
         
         
         hSizer_nb1_2f.Add( hSizer_nb1_2f_count, 1, wx.EXPAND, 5 )
@@ -624,11 +624,16 @@ class View(wx.Frame):
         #ctrl panel_01 2f
         
         self.m_np1_checkBox_01 = cb_nb1_2f_range
-        self.m_np1_staticText_01 = st_nb1_2f_between
-        self.m_np1_choice_01 = c_nb1_2f_hh
-        self.m_np1_choice_02 = c_nb1_2f_hm
-        self.m_np1_choice_03 = c_nb1_2f_lh
-        self.m_np1_choice_04 = c_nb1_2f_lm
+        
+        self.m_np1_2f_tc_ll = tc_nb1_2f_l
+        self.m_np1_2f_tc_hh = tc_nb1_2f_h
+        
+        self.m_np1_choice_01 = c_nb1_2f_lh
+        self.m_np1_choice_02 = c_nb1_2f_lm
+        self.m_np1_choice_03 = c_nb1_2f_hh
+        self.m_np1_choice_04 = c_nb1_2f_hm
+        
+        self.m_np1_2f_slider = slider_nb1_2f_count
         
         #ctrl panel_01 3f
         self.m_np1_3f_tc_like = tc_nb1_3f_like
