@@ -17,7 +17,7 @@ import openpyxl.styles as xl_sty
 from openpyxl.styles import Font, Color
 from openpyxl.styles import colors
 from collections import OrderedDict
-from bsddb.dbtables import LikeCond
+
 
 class GridDataPage(wx.Panel):
     def __init__(self, parent, page_name, filename, cmd, grid_row_limit, args, args_index):
@@ -46,6 +46,7 @@ class GridDataPage(wx.Panel):
         self.parse = model.LogParse(filename)
         
         self.mPage.cmd = cmd
+        self.mPage.condition = cmd.partition(' WHERE ')[2]
         self.mPage.page_name = page_name
         #mPage.m_id = 
         #init data preview
@@ -58,12 +59,16 @@ class GridDataPage(wx.Panel):
                                                          self.mPage.m_data_row_limit, 
                                                          self.mPage.m_data_offset)
         
+        if not self.mPage.m_data:
+            return
+        
         self.mPage.m_data_len = self.parse.find_total_row_number(self.mPage.filename, self.mPage.cmd)
         self.mPage.m_grid_title = self.mPage.m_data[0]
         self.mPage.m_grid_title_len = len(self.mPage.m_data[0])
         #self.mPage.m_data = self.mPage.m_data[1]
         
         self.mPage.m_current_page_number = 1
+        
         self.mPage.m_max_page_number = 0
         
         if self.mPage.m_data_len > self.mPage.m_data_row_limit:
@@ -73,7 +78,9 @@ class GridDataPage(wx.Panel):
             else:
                 pass
         else:
+            self.mPage.m_max_page_number = 1
             pass 
+        self.mPage.show_page_number = '(  %s  /  %s   )'%(self.mPage.m_current_page_number, self.mPage.m_max_page_number)
         
         self.mPage.m_min_page_number = 1
         
@@ -84,7 +91,8 @@ class GridDataPage(wx.Panel):
                                     wx.DefaultSize,
                                     wx.TE_READONLY)
         
-        self.spinText.SetValue(str(self.mPage.m_current_page_number))
+        
+        self.spinText.SetValue(str(self.mPage.show_page_number))
         
         self.spinButton = wx.SpinButton(self.mPage, 
                                         wx.ID_ANY,
@@ -100,11 +108,20 @@ class GridDataPage(wx.Panel):
                                  1, mPage.m_data_len, 1)
         '''
         
-        self.staticText = wx.StaticText( self.mPage, 
+        staticText = wx.StaticText( self.mPage, 
                                          wx.ID_ANY, 
                                          u"Total Rows: " + str(self.mPage.m_data_len), 
                                          wx.DefaultPosition, 
                                          wx.DefaultSize, 0 )
+        vst = wx.StaticLine( self.mPage, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_VERTICAL )
+        
+        staticText1 = wx.StaticText( self.mPage, 
+                                         wx.ID_ANY, 
+                                         u"Command: " + str(self.mPage.cmd), 
+                                         wx.DefaultPosition, 
+                                         wx.DefaultSize, 0 )
+        
+        
         
         exportButton = wx.Button( self.mPage, 
                                   wx.ID_ANY, 
@@ -115,7 +132,9 @@ class GridDataPage(wx.Panel):
         
         spinnerSizer.Add(self.spinText, 0, wx.EXPAND, 5)
         spinnerSizer.Add(self.spinButton, 0, wx.EXPAND, 5)
-        spinnerSizer.Add(self.staticText, 0, wx.ALL, 5)
+        spinnerSizer.Add(staticText, 0, wx.ALL, 5)
+        spinnerSizer.Add( vst, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
+        spinnerSizer.Add( staticText1, 0, wx.ALL, 5 )
         exportSizer.Add(exportButton, 0, wx.ALIGN_RIGHT, 5)
         
         #row_size = len(data)
@@ -244,7 +263,8 @@ class GridDataPage(wx.Panel):
                                                          self.mPage.cmd, 
                                                          row_limit, 
                                                          self.mPage.m_data_offset)
-        self.spinText.SetValue(str(self.mPage.m_current_page_number))
+        self.mPage.show_page_number = '(  %s  /  %s   )'%(self.mPage.m_current_page_number, self.mPage.m_max_page_number)
+        self.spinText.SetValue(str(self.mPage.show_page_number))
         
         self.mGrid.OnUpdate(self.mPage.m_data[0], 
                            self.mPage.m_data, 
@@ -276,8 +296,8 @@ class GridDataPage(wx.Panel):
                                                          self.mPage.cmd, 
                                                          row_limit, 
                                                          self.mPage.m_data_offset)
-        
-        self.spinText.SetValue(str(self.mPage.m_current_page_number))
+        self.mPage.show_page_number = '(  %s  /  %s   )'%(self.mPage.m_current_page_number, self.mPage.m_max_page_number)
+        self.spinText.SetValue(str(self.mPage.show_page_number))
         self.mGrid.OnUpdate(self.mPage.m_data[0], 
                             self.mPage.m_data,
                             len(self.mPage.m_data), 
@@ -509,13 +529,16 @@ class Controller:
         self.m_view.Bind(wx.EVT_TEXT, self.OnLevelSrcChanged, self.m_view.m_np1_1f_tc_level)
         #ctrl panel_01 2f
         self.m_view.m_np1_checkBox_01.SetValue(False)
-        self.hl_hr = 0
-        self.hl_mm = 0
-        self.ll_hr = 0
-        self.ll_mm = 0
-        self.m_view.m_np1_choice_03.Disable()
-        self.m_view.m_np1_choice_04.Disable()
+        self.m_view.m_np1_st_range.SetLabel('SINGLE')
+        self.ts_hl = ''
+        self.ts_ll = ''
+        self.ts_hl_value = 0
+        self.ts_ll_value = 0 
+        #self.time_range_fifter = ''
         
+        #self.m_view.m_np1_choice_03.Disable()
+        #self.m_view.m_np1_choice_04.Disable()
+        self.m_view.m_np1_2f_tc_hh.SetEditable(False)
         
         self.m_view.Bind(wx.EVT_CHOICE, self.OnNPLLchoice, self.m_view.m_np1_choice_01)
         self.m_view.Bind(wx.EVT_CHOICE, self.OnNPLLchoice, self.m_view.m_np1_choice_02)
@@ -526,8 +549,10 @@ class Controller:
         
         self.m_view.Bind(wx.EVT_CHECKBOX, self.OnNPcheckBox, self.m_view.m_np1_checkBox_01)
         
-        self.m_view.Bind(wx.EVT_SLIDER, self.OnSLChanged, self.m_view.m_np1_2f_slider)
+        self.m_view.Bind(wx.EVT_SLIDER, self.OnSLChanged, self.m_view.m_np1_1f_slider)
         #self.m_view.Bind(wx.EVT_BUTTON, self.OnNPbutton, self.m_view.m_np1_button_01)
+        
+        
         #ctrl panel_01 3f
         self.m_view.m_np1_3f_tc_cmd.SetValue(self.cmd)
         self.like_fifter = ''
@@ -730,7 +755,7 @@ class Controller:
                     self.like_fifter += ' OR '
                 else:
                     pass
-            self.like_fifter = self.like_fifter[:-4]
+            self.like_fifter = '(' + self.like_fifter[:-4] + ')'
         
         self.OntcCMDUpdate()
         
@@ -782,6 +807,13 @@ class Controller:
         
         like = self.like_fifter
         
+        #time_range = self.time_range_fifter      
+       
+        ll = self.ts_ll
+        hl = self.ts_hl
+        
+        
+        '''
         _list =[src, state, lev ] 
         
         base = text.partition(' WHERE ')[0]
@@ -809,7 +841,25 @@ class Controller:
             else:
                 pass
             
+        '''
+       
+        #_list =[src, state, lev, like, time_range] 
+        _list =[src, state, lev, like, ll, hl] 
         
+        base = text.partition(' WHERE ')[0]
+        
+        fifter = ''
+        for value in _list:
+            if not value =='' and not value == None:
+                if not fifter =='':
+                    fifter += ' AND '
+                else:#first
+                    fifter = fifter + ' WHERE '
+                fifter += value
+            else:
+                pass
+        
+        base += fifter
         self.m_view.m_np1_3f_tc_cmd.SetValue(base)
         
         pass
@@ -820,39 +870,7 @@ class Controller:
         pass
     
     def OnbtnReset(self, evt):
-        self.cmd = 'SELECT * FROM log_raw'
-        
-        self.src_fifter = ''
-        self.state_fifter = ''
-        self.level_fifter = ''
-        self.m_view.m_np1_1f_tc_src.SetValue('')
-        self.m_view.m_np1_1f_tc_state.SetValue('')
-        self.m_view.m_np1_1f_tc_level.SetValue('')
-        self.m_view.m_np1_1f_tc_src.SetEditable(True)
-        self.m_view.m_np1_1f_tc_state.SetEditable(True)
-        self.m_view.m_np1_1f_tc_level.SetEditable(True)
-        
-        self.m_view.m_np1_checkBox_01.Enable()
-        self.m_view.m_np1_checkBox_01.SetValue(False)
-        self.m_view.m_np1_choice_01.Enable()
-        self.m_view.m_np1_choice_02.Enable()
-        self.m_view.m_np1_choice_03.Disable()
-        self.m_view.m_np1_choice_04.Disable()
-        self.m_view.m_np1_2f_tc_ll.SetEditable(True)
-        self.m_view.m_np1_2f_tc_hh.SetEditable(False)
-        
-        self.m_view.m_np1_2f_slider.SetValue(0)
-        #self.m_view.m_np1_2f_slider.SetTickFreq(1,0)
-        
-        self.like_fifter = ''
-        self.m_view.m_np1_3f_tc_like.SetValue('')
-        self.m_view.m_np1_3f_tc_like.SetEditable(True)
-        self.m_view.m_np1_3f_cb_cmd.SetValue(False)
-        
-        self.m_view.m_np1_3f_tc_cmd.SetValue(self.cmd)
-        
-        self.m_view.m_np1_3f_tc_cmd.SetEditable(False)
-        
+        self.mReset()
         
         pass
     def OnbtnQuery(self, evt):
@@ -872,22 +890,132 @@ class Controller:
         
         
     def OntcLLChanged(self, evt):
-        print 'll'
+        text = evt.GetString()
+        
         pass
     def OntcHHChanged(self, evt):
-        print 'hh'
+        text = evt.GetString()
+        
         pass
         
         
     
     def OnNPLLchoice(self, evt):
-        self.ll_hr = int(self.m_view.m_np1_choice_01.GetStringSelection().split(' ')[0])
-        self.ll_mm = int(self.m_view.m_np1_choice_02.GetStringSelection().split(' ')[0])
+        ll_hr = int(self.m_view.m_np1_choice_01.GetStringSelection().split(' ')[0])
+        ll_mm = int(self.m_view.m_np1_choice_02.GetStringSelection().split(' ')[0])
+        self.ts_ll =''
+        
+        if (ll_hr or ll_mm) and self.current_select_file_path:
+            if self.m_view.m_np1_checkBox_01.IsChecked():#range mode
+                string_split = self.current_select_file_daytime.split('-')
+                yy = int(string_split[0])
+                MM = int(string_split[1])
+                dd = int(string_split[2])
+                parse = model.LogParse(self.current_select_file_path)
+                self.ts_ll_value = parse.unixtime_covert(yy, MM, dd, ll_hr, ll_mm, 00)
+                self.ts_ll = '(ts>=' + str(self.ts_ll_value) + '000000' + ')'            
+                pass
+            else:#SINGLE
+                string_split = self.current_select_file_daytime.split('-')
+                yy = int(string_split[0])
+                MM = int(string_split[1])
+                dd = int(string_split[2])
+                parse = model.LogParse(self.current_select_file_path)
+                self.ts_ll_value = parse.unixtime_covert(yy, MM, dd, ll_hr, ll_mm, 00)
+                
+                ll = int(self.ts_ll_value) - int(self.ts_hl_value)
+                hh = int(self.ts_ll_value) + int(self.ts_hl_value)
+                
+                self.ts_ll = '(ts>=' + str(ll) + '000000' + ')' 
+                self.ts_hl = '(ts<=' + str(hh) + '000000' + ')' 
+                
+                pass
+        else:
+            self.ts_ll =''
+            
+        
+            
+        self.OntcCMDUpdate()
+        
+        
+        
+        
+        
+        """
+        if (ll_hr or ll_mm) and self.current_select_file_path and self.m_view.m_np1_checkBox_01.IsChecked():
+            string_split = self.current_select_file_daytime.split('-')
+            yy = int(string_split[0])
+            MM = int(string_split[1])
+            dd = int(string_split[2])
+            
+            parse = model.LogParse(self.current_select_file_path)
+            self.ts_ll = parse.unixtime_covert(yy, MM, dd, ll_hr, ll_mm, 00)
+            
+            if (not self.ts_hl=='') and (not self.ts_ll==''):
+            #int(self.ts_hl)>int(self.ts_ll)''' :
+                
+                self.time_range_fifter = self.m_model.GetTimeRangeCmd(self.current_select_file_path, self.ts_hl, self.ts_ll)
+                self.time_range_fifter = '(' + self.time_range_fifter.partition(' WHERE ')[2].partition(' ORDER ')[0] + ')' + ' ORDER ' + self.time_range_fifter.partition(' WHERE ')[2].partition(' ORDER ')[2]
+                self.OntcCMDUpdate()
+            else:
+                pass
+        else:
+            pass
+        """
         pass
     def OnNPHLchoice(self, evt):
-        self.hl_hr = int(self.m_view.m_np1_choice_03.GetStringSelection().split(' ')[0])
-        self.hl_mm = int(self.m_view.m_np1_choice_04.GetStringSelection().split(' ')[0])
-        print self.hl_hr
+        hl_hr = int(self.m_view.m_np1_choice_03.GetStringSelection().split(' ')[0])
+        hl_mm = int(self.m_view.m_np1_choice_04.GetStringSelection().split(' ')[0])
+        self.ts_hl =''
+        
+        
+        if (hl_hr or hl_mm) and self.current_select_file_path:
+            if self.m_view.m_np1_checkBox_01.IsChecked():#RANGE
+                string_split = self.current_select_file_daytime.split('-')
+                yy = int(string_split[0])
+                MM = int(string_split[1])
+                dd = int(string_split[2])
+                parse = model.LogParse(self.current_select_file_path)
+                self.ts_hl_value = parse.unixtime_covert(yy, MM, dd, hl_hr, hl_mm, 00)
+                self.ts_hl = '(ts<=' + str(self.ts_hl_value) + '000000' + ')'            
+                pass
+            else:#SINGLE
+                self.ts_hl_value = str((hl_hr*60*60) + (hl_mm*60))
+                ll = int(self.ts_ll_value) - int(self.ts_hl_value)
+                hh = int(self.ts_ll_value) + int(self.ts_hl_value)
+                
+                self.ts_ll = '(ts>=' + str(ll) + '000000' + ')' 
+                self.ts_hl = '(ts<=' + str(hh) + '000000' + ')' 
+                pass
+        else:
+            self.ts_hl =''
+            
+        
+            
+        self.OntcCMDUpdate()
+        
+        
+        
+       
+        """
+        if (hl_hr or hl_mm) and self.current_select_file_path and self.m_view.m_np1_checkBox_01.IsChecked():
+            string_split = self.current_select_file_daytime.split('-')
+            yy = int(string_split[0])
+            MM = int(string_split[1])
+            dd = int(string_split[2])
+            
+            parse = model.LogParse(self.current_select_file_path)
+            self.ts_hl = parse.unixtime_covert(yy, MM, dd, hl_hr, hl_mm, 00)
+            
+            if (not self.ts_hl=='') and (not self.ts_ll==''):
+                self.time_range_fifter = self.m_model.GetTimeRangeCmd(self.current_select_file_path, self.ts_hl, self.ts_ll)
+                self.time_range_fifter = '(' + self.time_range_fifter.partition(' WHERE ')[2].partition(' ORDER ')[0] + ')' + ' ORDER ' + self.time_range_fifter.partition(' WHERE ')[2].partition(' ORDER ')[2]
+                self.OntcCMDUpdate()
+            else:
+                pass
+        else:
+            pass
+        """
         pass
     
     def OnNPbutton(self, evt):
@@ -933,24 +1061,76 @@ class Controller:
                 pass
         pass
     def OnSLChanged(self, evt):
-        print evt.GetInt()
+        self.grid_max_row_number = evt.GetInt()
         pass
     def OnNPcheckBox(self, evt):
         if  evt.IsChecked():
             
-            self.m_view.m_np1_choice_03.Enable()
-            self.m_view.m_np1_choice_04.Enable()
+            #self.m_view.m_np1_choice_03.Enable()
+            #self.m_view.m_np1_choice_04.Enable()
+            self.m_view.m_np1_st_range.SetLabel('RANGE')
+            self.m_view.m_np1_st_offset.SetLabel('TO')
             self.m_view.m_np1_2f_tc_hh.SetEditable(True)
             pass
         else:
             
-            self.m_view.m_np1_choice_03.Disable()
-            self.m_view.m_np1_choice_04.Disable()
+            #self.m_view.m_np1_choice_03.Disable()
+            #self.m_view.m_np1_choice_04.Disable()
+            self.m_view.m_np1_st_range.SetLabel('SINGLE')
+            self.m_view.m_np1_st_offset.SetLabel('OFFSET')
             self.m_view.m_np1_2f_tc_hh.SetEditable(False)
             pass
         pass
+        
     
     #@staticmethod
+    
+    def mReset(self):
+        self.cmd = 'SELECT * FROM log_raw'
+        
+        self.src_fifter = ''
+        self.state_fifter = ''
+        self.level_fifter = ''
+        self.m_view.m_np1_1f_tc_src.SetValue('')
+        self.m_view.m_np1_1f_tc_state.SetValue('')
+        self.m_view.m_np1_1f_tc_level.SetValue('')
+        self.m_view.m_np1_1f_tc_src.SetEditable(True)
+        self.m_view.m_np1_1f_tc_state.SetEditable(True)
+        self.m_view.m_np1_1f_tc_level.SetEditable(True)
+        
+        self.m_view.m_np1_choice_01.SetSelection(0)
+        self.m_view.m_np1_choice_02.SetSelection(0)
+        self.m_view.m_np1_choice_03.SetSelection(0)
+        self.m_view.m_np1_choice_04.SetSelection(0)
+        self.ts_hl = ''
+        self.ts_ll = ''
+        self.ts_ll_value = 0
+        self.ts_hl_value = 0
+        self.time_range_fifter = ''
+        self.m_view.m_np1_st_range.SetLabel('SINGLE')
+        self.m_view.m_np1_st_offset.SetLabel('OFFSET')
+        self.m_view.m_np1_checkBox_01.Enable()
+        self.m_view.m_np1_checkBox_01.SetValue(False)
+        self.m_view.m_np1_choice_01.Enable()
+        self.m_view.m_np1_choice_02.Enable()
+        self.m_view.m_np1_choice_03.Enable()
+        self.m_view.m_np1_choice_04.Enable()
+        self.m_view.m_np1_2f_tc_ll.SetEditable(True)
+        self.m_view.m_np1_2f_tc_hh.SetEditable(False)
+        
+        self.m_view.m_np1_1f_slider.SetValue(8192)
+        #self.m_view.m_np1_2f_slider.SetTickFreq(1,0)
+        
+        self.like_fifter = ''
+        self.m_view.m_np1_3f_tc_like.SetValue('')
+        self.m_view.m_np1_3f_tc_like.SetEditable(True)
+        self.m_view.m_np1_3f_cb_cmd.SetValue(False)
+        
+        self.m_view.m_np1_3f_tc_cmd.SetValue('SELECT * FROM log_raw')
+        
+        self.m_view.m_np1_3f_tc_cmd.SetEditable(False)
+        
+        pass
     
     def mGetPathOnItem(self, item):
         tree = self.m_view.m_treectrl

@@ -372,9 +372,30 @@ class View(wx.Frame):
         hSizer_nb1_1f.Add( hSizer_nb1_1f_bk1, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 5 )
         #hSizer_nb1_1f_bk1 end
         #hSizer_nb1_1f_bk2 start
-        hSizer_nb1_1f_bk2 = wx.BoxSizer( wx.HORIZONTAL )
-        hSizer_nb1_1f_bk2.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
-        hSizer_nb1_1f.Add( hSizer_nb1_1f_bk2, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 5 )
+        hSizer_nb1_1f_count = wx.BoxSizer( wx.HORIZONTAL )
+        
+        st_nb1_1f_count = wx.StaticText( notebook.panel_01, 
+                                         wx.ID_ANY, 
+                                         u"PAGE MAX ROWS:", 
+                                         wx.DefaultPosition, 
+                                         wx.DefaultSize, 0 )
+        st_nb1_1f_count.Wrap( -1 )
+        hSizer_nb1_1f_count.Add( st_nb1_1f_count, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        
+        slider_nb1_1f_count = wx.Slider( notebook.panel_01, 
+                                         wx.ID_ANY, 
+                                         8192, 8192, 32768, 
+                                         wx.DefaultPosition, 
+                                         wx.Size( -1,10 ), 
+                                         wx.SL_HORIZONTAL|wx.SL_LABELS)
+        hSizer_nb1_1f_count.Add( slider_nb1_1f_count, 1, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5 )
+        
+        
+        hSizer_nb1_1f.Add( hSizer_nb1_1f_count, 1, wx.EXPAND, 5 )
+        #hSizer_nb1_2f_count end
+        
+        
+        
         #hSizer_nb1_1f_bk2 end
         #hSizer_nb1_2f ==============================================================================================
         #hSizer_nb1_2f_range start
@@ -382,7 +403,7 @@ class View(wx.Frame):
         
         cb_nb1_2f_range = wx.CheckBox( notebook.panel_01, 
                                        wx.ID_ANY, 
-                                       u"  RANGE", 
+                                       u"  SINGLE", 
                                        wx.DefaultPosition, 
                                        wx.DefaultSize, 0 )
         cb_nb1_2f_range.SetValue(False) 
@@ -420,7 +441,7 @@ class View(wx.Frame):
                                    wx.DefaultSize, 0 )
         hSizer_nb1_2f_range.Add( tc_nb1_2f_l, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.LEFT, 5 )
         
-        st_nb1_2f_between = wx.StaticText( notebook.panel_01, wx.ID_ANY, u"TO", wx.DefaultPosition, wx.DefaultSize, 0 )
+        st_nb1_2f_between = wx.StaticText( notebook.panel_01, wx.ID_ANY, u"OFFSET", wx.DefaultPosition, wx.DefaultSize, 0 )
         st_nb1_2f_between.Wrap( -1 )
         hSizer_nb1_2f_range.Add( st_nb1_2f_between, 0, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.LEFT, 5 )
         
@@ -454,27 +475,9 @@ class View(wx.Frame):
         vst_nb1_2f_1 = wx.StaticLine( notebook.panel_01, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_VERTICAL )
         hSizer_nb1_2f.Add( vst_nb1_2f_1, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
         #hSizer_nb1_2f_count start
-        hSizer_nb1_2f_count = wx.BoxSizer( wx.HORIZONTAL )
-        
-        st_nb1_2f_count = wx.StaticText( notebook.panel_01, 
-                                         wx.ID_ANY, 
-                                         u"ROW COUNT:", 
-                                         wx.DefaultPosition, 
-                                         wx.DefaultSize, 0 )
-        st_nb1_2f_count.Wrap( -1 )
-        hSizer_nb1_2f_count.Add( st_nb1_2f_count, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
-        
-        slider_nb1_2f_count = wx.Slider( notebook.panel_01, 
-                                         wx.ID_ANY, 
-                                         0, 0, 16384, 
-                                         wx.DefaultPosition, 
-                                         wx.Size( -1,10 ), 
-                                         wx.SL_HORIZONTAL|wx.SL_LABELS)
-        hSizer_nb1_2f_count.Add( slider_nb1_2f_count, 1, wx.ALIGN_CENTER_VERTICAL|wx.EXPAND, 5 )
-        
-        
-        hSizer_nb1_2f.Add( hSizer_nb1_2f_count, 1, wx.EXPAND, 5 )
-        #hSizer_nb1_2f_count end
+        hSizer_nb1_2f_bk1 = wx.BoxSizer( wx.HORIZONTAL )
+        hSizer_nb1_2f_bk1.AddSpacer( ( 0, 0), 1, wx.EXPAND, 5 )
+        hSizer_nb1_2f.Add( hSizer_nb1_2f_bk1, 1, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 5 )
         #hSizer_nb1_3f ==============================================================================================
         #hSizer_nb1_3f_like start
         hSizer_nb1_3f_like = wx.BoxSizer( wx.HORIZONTAL )
@@ -624,7 +627,8 @@ class View(wx.Frame):
         #ctrl panel_01 2f
         
         self.m_np1_checkBox_01 = cb_nb1_2f_range
-        
+        self.m_np1_st_offset = st_nb1_2f_between
+        self.m_np1_st_range = cb_nb1_2f_range
         self.m_np1_2f_tc_ll = tc_nb1_2f_l
         self.m_np1_2f_tc_hh = tc_nb1_2f_h
         
@@ -633,7 +637,7 @@ class View(wx.Frame):
         self.m_np1_choice_03 = c_nb1_2f_hh
         self.m_np1_choice_04 = c_nb1_2f_hm
         
-        self.m_np1_2f_slider = slider_nb1_2f_count
+        self.m_np1_1f_slider = slider_nb1_1f_count
         
         #ctrl panel_01 3f
         self.m_np1_3f_tc_like = tc_nb1_3f_like

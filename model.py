@@ -5,6 +5,7 @@ from datetime import datetime, date
 import calendar
 from collections import OrderedDict
 import wx.grid as gridlib
+
 #import xlrd
 
 #import xlsgrid
@@ -138,6 +139,7 @@ class Sqlite():
                 cmd_t = 'SELECT * FROM %s LIMIT 1'%self.tableName
                 pass
             else:
+                cmd_t += ' LIMIT 1'
                 pass  
         
         try:
@@ -203,6 +205,7 @@ class LogParse():
     def __init__(self, filename):
         #Sqlite Database
         self.sqlite = Sqlite()
+        #self.tableName = 'mp_log_all'
         self.tableName = 'log_raw'
         self.sqlite.tableName = self.tableName
         
@@ -271,6 +274,10 @@ class LogParse():
         pass
     '''
     def find_mp_message(self, msg):
+        msg = str(msg)
+        if self.curProj == 'unknow':
+            return False
+        
         if self.curProj == 'SSM_Balloon':
             if len(msg) > 294:
                 return True
@@ -278,6 +285,7 @@ class LogParse():
                 return False
         else:
             if len(msg) > 320:
+                
                 return True
             else:
                 return False
@@ -405,15 +413,19 @@ class Model():
     
     def GetRowRangeData(self, filename, cmd, limit, offset):
         range = " LIMIT %s OFFSET %s"%(limit, offset)
+        order = ' ORDER BY ts ASC'
+        temp = str(cmd)
         if not filename:
             return
         else:
+            
             log = LogParse(filename)
-            cmd += range
+            cmd = cmd + order + range
+            
             #print 'start'
             raw_data = self.sqlite.execute_command(filename, cmd)            
             #print 'get raw data'
-            data = self.SetDataToGrid(filename, raw_data)
+            data = self.SetDataToGrid(filename, raw_data, temp)
             #print 'parsing data'
             return data
         pass
@@ -463,7 +475,9 @@ class Model():
             pass
         pass    
     '''
-    def SetDataToGrid(self, filename, raw_data):
+    def SetDataToGrid(self, filename, raw_data, *args, **kwargs):
+        cmd = str(args[0])
+
         if not len(raw_data) >= 1:
             return
         else:
@@ -473,7 +487,7 @@ class Model():
         log = LogParse(filename)
         first_append_title = True
         data = [[] for _ in range(len(raw_data)+1)]
-        title = self.sqlite.get_col_name(filename, '')
+        title = self.sqlite.get_col_name(filename, cmd)
         
         mp_message = ''
         for item in title:
@@ -487,10 +501,51 @@ class Model():
         data[0].insert(iter, 'time')
         iter +=1
         data[0].insert(iter, 'ms')
-        data[0][data[0].index('msg')] = 'mc_log'
+        
+        if 'msg' in data[0]:
+            data[0][data[0].index('msg')] = 'mc_log'
         #print 'title processed'
+        
+        
+        
         row_count = 1
-        for row in raw_data:
+        for index, row in enumerate(raw_data):
+            
+            for ind, value in enumerate(row):
+                
+                if ind == 0:
+                    data[row_count].append(row[ind])
+                    #data[row_count].append(self.log.timestamp_convert(row[0])['day'])
+                    data[row_count].append(log.timestamp_convert(row[ind])['time'])
+                    data[row_count].append(log.timestamp_convert(row[ind])['ms'])
+                elif ind == 5:
+                    if  log.find_mp_message(row[ind]):
+                        mp_message = log.mp_message_standardize(row[ind])
+                        mp_message = log.mp_message_parse(mp_message)#return OrderedDict()
+                        if first_append_title:
+                            for keys in mp_message:
+                                data[0].append(keys)
+                                first_append_title = False
+                                pass
+                        data[row_count].append('')
+                        for key in mp_message:
+                            data[row_count].append(mp_message[key])
+                        else:
+                            pass
+                    else:
+                        data[row_count].append(row[ind])
+                        pass
+                else:
+                    data[row_count].append(row[ind])
+                    pass
+                        
+                #data[row_count].append(row[ind])
+            row_count += 1
+            
+            
+            
+            
+            '''
             data[row_count].append(row[0])
             #data[row_count].append(self.log.timestamp_convert(row[0])['day'])
             data[row_count].append(log.timestamp_convert(row[0])['time'])
@@ -499,6 +554,7 @@ class Model():
             data[row_count].append(row[2])
             data[row_count].append(row[3])
             data[row_count].append(row[4])
+             
             if log.find_mp_message(row[5]):
                 mp_message = log.mp_message_standardize(row[5])
                 mp_message = log.mp_message_parse(mp_message)#return OrderedDict()
@@ -515,6 +571,7 @@ class Model():
                 data[row_count].append(row[5])
                 pass    
             row_count += 1
+            '''
         #print 'write to array'
         return data
         pass
