@@ -40,10 +40,10 @@ class GridDataPage(wx.Panel):
         statusSizer.Add(exportSizer, 0, 0, 5)
         
         
-        self.m_model = Model()
+        self.m_model = Model(filename)
         
         self.m_progress = args
-        self.parse = model.LogParse(filename)
+        
         
         self.mPage.cmd = cmd
         self.mPage.condition = cmd.partition(' WHERE ')[2]
@@ -54,15 +54,14 @@ class GridDataPage(wx.Panel):
         self.mPage.m_data_offset = 0
         self.mPage.m_data_row_limit = grid_row_limit
         
-        self.mPage.m_data = self.m_model.GetRowRangeData(self.mPage.filename,
-                                                         self.mPage.cmd,
+        self.mPage.m_data = self.m_model.GetRowRangeData(self.mPage.cmd,
                                                          self.mPage.m_data_row_limit, 
                                                          self.mPage.m_data_offset)
         
         if not self.mPage.m_data:
             return
         
-        self.mPage.m_data_len = self.parse.find_total_row_number(self.mPage.filename, self.mPage.cmd)
+        self.mPage.m_data_len = self.m_model.parse.find_total_row_number(self.mPage.cmd)
         self.mPage.m_grid_title = self.mPage.m_data[0]
         self.mPage.m_grid_title_len = len(self.mPage.m_data[0])
         #self.mPage.m_data = self.mPage.m_data[1]
@@ -176,15 +175,13 @@ class GridDataPage(wx.Panel):
         
         doc = open(exportFileName, 'w')
         
-        data_total_rows = self.parse.find_total_row_number(self.mPage.filename, 
-                                                           self.mPage.cmd)
+        data_total_rows = self.m_model.parse.find_total_row_number( self.mPage.cmd)
         
         
         #self.m_progress.SetValue(int(20))
-        data = self.m_model.GetRowRangeData(self.mPage.filename,
-                                                self.mPage.cmd,
-                                                data_total_rows, 
-                                                0)
+        data = self.m_model.GetRowRangeData(self.mPage.cmd,
+                                            data_total_rows, 
+                                            0)
         #self.m_progress.SetValue(int(70))
         
         for row in data:
@@ -259,8 +256,7 @@ class GridDataPage(wx.Panel):
         else:
             pass
         
-        self.mPage.m_data = self.m_model.GetRowRangeData(self.mPage.filename,
-                                                         self.mPage.cmd, 
+        self.mPage.m_data = self.m_model.GetRowRangeData(self.mPage.cmd, 
                                                          row_limit, 
                                                          self.mPage.m_data_offset)
         self.mPage.show_page_number = '(  %s  /  %s   )'%(self.mPage.m_current_page_number, self.mPage.m_max_page_number)
@@ -292,8 +288,7 @@ class GridDataPage(wx.Panel):
         else:
             pass
         
-        self.mPage.m_data = self.m_model.GetRowRangeData(self.mPage.filename,
-                                                         self.mPage.cmd, 
+        self.mPage.m_data = self.m_model.GetRowRangeData(self.mPage.cmd, 
                                                          row_limit, 
                                                          self.mPage.m_data_offset)
         self.mPage.show_page_number = '(  %s  /  %s   )'%(self.mPage.m_current_page_number, self.mPage.m_max_page_number)
@@ -487,7 +482,7 @@ class HugeAuiNoteBook(wx.Panel):
 class Controller:
     def __init__(self, app):
         self.m_view = view.View(None)
-        self.m_model = model.Model()
+        #self.m_model = model.Model()
         
         self.show_current_file = None
         self.current_select_page = None
@@ -504,6 +499,10 @@ class Controller:
         self.grid_max_row_number = 8192
         
         #event bind
+        #key event
+        #self.m_view.m_panel.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
+        #self.m_view.super().Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
+        
         
         
         #auimanager
@@ -528,6 +527,8 @@ class Controller:
         self.m_view.Bind(wx.EVT_TEXT, self.OntcStateChanged, self.m_view.m_np1_1f_tc_state)
         self.m_view.Bind(wx.EVT_TEXT, self.OnLevelSrcChanged, self.m_view.m_np1_1f_tc_level)
         #ctrl panel_01 2f
+        self.m_timezone = 0
+        self.m_view.Bind(wx.EVT_CHOICE, self.OnTimeZoneChoice, self.m_view.m_np1_2f_timezone)
         self.m_view.m_np1_checkBox_01.SetValue(False)
         self.m_view.m_np1_st_range.SetLabel('SINGLE')
         self.ts_hl = ''
@@ -595,14 +596,14 @@ class Controller:
         _sql = model.Sqlite()
         if _sql.is_sqlite_file(itemPath):
             self.current_select_file_path = itemPath
-            parse = model.LogParse(itemPath)
-            self.current_select_project_name = parse.find_current_project(itemPath)
+            _model = model.Model(itemPath)
+            self.current_select_project_name = _model.parse.find_current_project()
             self.current_select_file_name = itemName
             self.current_select_file_path = itemPath
             self.show_current_file = '%s: %s'%(self.current_select_project_name, itemName)
             self.m_view.m_statusBar.SetStatusText(self.show_current_file, 0)
-            log = model.LogParse(itemPath)
-            self.current_select_file_daytime = log.find_current_project_daytime(itemPath)
+            
+            self.current_select_file_daytime = _model.parse.find_current_project_daytime()
         else:
             pass  
     
@@ -622,10 +623,13 @@ class Controller:
         if os.path.isdir(itemPath):
             pass
         else:
+            
+            
             _sql = model.Sqlite()
             if _sql.is_sqlite_file(itemPath):
-                log = model.LogParse(itemPath)
-                projName = log.curProj
+                _model = model.Model(itemPath)
+                
+                projName = _model.parse.curProj
                 self.current_select_project_name = projName
                 self.show_current_file = '%s: %s'%(projName, itemName)
                 page_name = '%s: %s [preview]'%(projName, itemName)
@@ -635,7 +639,7 @@ class Controller:
                 GridDataPage(self.m_view.m_auimanager, 
                              page_name, 
                              itemPath,
-                             self.m_model.GetFullDataCmd(itemPath),
+                             _model.GetFullDataCmd(),
                              self.grid_max_row_number,
                              self.m_view.m_progress,
                              0)
@@ -790,8 +794,8 @@ class Controller:
             self.m_view.m_np1_checkBox_01.SetValue(False)
             self.m_view.m_np1_choice_01.Enable()
             self.m_view.m_np1_choice_02.Enable()
-            self.m_view.m_np1_choice_03.Disable()
-            self.m_view.m_np1_choice_04.Disable()
+            self.m_view.m_np1_choice_03.Enable()
+            self.m_view.m_np1_choice_04.Enable()
             self.m_view.m_np1_2f_tc_ll.SetEditable(True)
             self.m_view.m_np1_2f_tc_hh.SetEditable(False)
             
@@ -898,7 +902,12 @@ class Controller:
         
         pass
         
+    def OnTimeZoneChoice(self, evt):
+        selected_str = self.m_view.m_np1_2f_timezone.GetStringSelection()[4:-3]
+        print selected_str, int(selected_str)
+        self.m_timezone = int(selected_str)
         
+        pass
     
     def OnNPLLchoice(self, evt):
         ll_hr = int(self.m_view.m_np1_choice_01.GetStringSelection().split(' ')[0])
@@ -906,13 +915,15 @@ class Controller:
         self.ts_ll =''
         
         if (ll_hr or ll_mm) and self.current_select_file_path:
+            _model = model.Model(self.current_select_file_path)
             if self.m_view.m_np1_checkBox_01.IsChecked():#range mode
                 string_split = self.current_select_file_daytime.split('-')
                 yy = int(string_split[0])
                 MM = int(string_split[1])
                 dd = int(string_split[2])
-                parse = model.LogParse(self.current_select_file_path)
-                self.ts_ll_value = parse.unixtime_covert(yy, MM, dd, ll_hr, ll_mm, 00)
+                
+                
+                self.ts_ll_value = _model.parse.unixtime_covert(yy, MM, dd, ll_hr, ll_mm, 00)
                 self.ts_ll = '(ts>=' + str(self.ts_ll_value) + '000000' + ')'            
                 pass
             else:#SINGLE
@@ -920,8 +931,8 @@ class Controller:
                 yy = int(string_split[0])
                 MM = int(string_split[1])
                 dd = int(string_split[2])
-                parse = model.LogParse(self.current_select_file_path)
-                self.ts_ll_value = parse.unixtime_covert(yy, MM, dd, ll_hr, ll_mm, 00)
+               
+                self.ts_ll_value = _model.parse.unixtime_covert(yy, MM, dd, ll_hr, ll_mm, 00)
                 
                 ll = int(self.ts_ll_value) - int(self.ts_hl_value)
                 hh = int(self.ts_ll_value) + int(self.ts_hl_value)
@@ -975,8 +986,12 @@ class Controller:
                 yy = int(string_split[0])
                 MM = int(string_split[1])
                 dd = int(string_split[2])
-                parse = model.LogParse(self.current_select_file_path)
-                self.ts_hl_value = parse.unixtime_covert(yy, MM, dd, hl_hr, hl_mm, 00)
+                
+                _model = model.Model(self.current_select_file_path)
+                
+                
+                
+                self.ts_hl_value = _model.parse.unixtime_covert(yy, MM, dd, hl_hr, hl_mm, 00)
                 self.ts_hl = '(ts<=' + str(self.ts_hl_value) + '000000' + ')'            
                 pass
             else:#SINGLE
@@ -1098,6 +1113,7 @@ class Controller:
         self.m_view.m_np1_1f_tc_state.SetEditable(True)
         self.m_view.m_np1_1f_tc_level.SetEditable(True)
         
+        self.m_view.m_np1_2f_timezone.SetSelection( 11 )
         self.m_view.m_np1_choice_01.SetSelection(0)
         self.m_view.m_np1_choice_02.SetSelection(0)
         self.m_view.m_np1_choice_03.SetSelection(0)
@@ -1264,7 +1280,18 @@ class Controller:
         self.m_view.m_auimanager.AddPage(mPanel, page_name, False)
         pass
     """
+    
+    
+    
+    def OnKeyDown(self, e):
+        key = e.GetKeyCode()
         
+        if key == wx.WXK_ESCAPE:
+        
+            print 444
+            pass 
+        
+        pass
    
     
     

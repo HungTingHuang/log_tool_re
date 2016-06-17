@@ -94,6 +94,9 @@ class Sqlite():
         self.count = 0
         self.data_len = 0
         pass
+    def set_table_name(self, tablename):
+        self.tableName = tablename
+        pass
     
     def is_sqlite_file(self, filename):
         if filename == filename.split('.')[0]:
@@ -202,13 +205,13 @@ class Sqlite():
     '''
     
 class LogParse():
-    def __init__(self, filename):
+    def __init__(self):
         #Sqlite Database
         self.sqlite = Sqlite()
         #self.tableName = 'mp_log_all'
         self.tableName = 'log_raw'
         self.sqlite.tableName = self.tableName
-        
+        self.timezone = 0
         #identification_token
         self.id_token = 'msg'
         self.dev = 'Start New CCS Run.'
@@ -222,29 +225,37 @@ class LogParse():
         self.ssm_mecha = 'Get hight score'
         
         self.emmem = 'HASP KEY CHECK : SUCCESS'
+        self.filename = ''
         
         #proj
-        if filename == None:
+        if self.filename == None:
             self.curProj = 'unknow'#current project
-        else:
-            self.find_current_project(filename)
         
-    def find_total_row_number(self, filename, cmd):
-        return self.sqlite.get_total_row_number(filename, cmd)[0][0]
+      
+    def set_filename(self, filename):
+        self.filename = filename
+        self.curProj = self.find_current_project()
+        
+    def set_timezone(self, timezone):
+        self.timezone = timezone
+        pass    
     
-    def find_table_col_name(self, filename, cmd):
-        return self.sqlite.get_col_name(filename, cmd)
+    def find_total_row_number(self, cmd):
+        return self.sqlite.get_total_row_number(self.filename, cmd)[0][0]
+    
+    def find_table_col_name(self, cmd):
+        return self.sqlite.get_col_name(self.filename, cmd)
         pass
-    def find_current_project_daytime(self, filename):
+    def find_current_project_daytime(self):
         cmd = 'SELECT ts FROM %s LIMIT 1'%self.tableName
-        timestamp = self.sqlite.execute_command(filename, cmd)[0][0]
+        timestamp = self.sqlite.execute_command(self.filename, cmd)[0][0]
         return time.strftime('%Y-%m-%d', time.gmtime(timestamp/1000000))
         
         
-    def find_current_project(self, filename):
+    def find_current_project(self):
         
         cmd = 'SELECT %s FROM %s LIMIT 1'%(self.id_token, self.tableName)
-        data = self.sqlite.execute_command(filename, cmd)[0]
+        data = self.sqlite.execute_command(self.filename, cmd)[0]
         
         if self.dev in data[0]:
             self.curProj = 'DEV_iRide'
@@ -305,7 +316,8 @@ class LogParse():
             item = x.partition('=')
             title = item[0]
             for y in item[2].split(','):
-                
+                if y == '':
+                    continue 
                 if len(item[2].split(',')) == 1:
                     result_mp_message[title] = y
                 else:
@@ -356,7 +368,29 @@ class LogParse():
         _t = dict()
         _t['day'] = time.strftime('%Y-%m-%d', time.gmtime(ts/1000000))
         _t['time'] = time.strftime('%H:%M:%S', time.gmtime(ts/1000000))
+        
+        day_offset = 0
+        hr_offset = 0
+        
+        hr_offset = (int(_t['time'][:2]) + int(self.timezone))
+        if hr_offset > 24:
+            day_offset = int(_t['day'][-2:])+1
+            hr_offset = int(hr_offset %24)
+        else:
+            pass
+        
+        _t['day'] = _t['day'].replace(_t['day'][-2:], str(day_offset))
+        
+        _t['time'] = _t['time'].replace(_t['time'][:2], '{:02d}'.format(hr_offset))
+        
+        
+        
+        
+        
         _t['ms'] = int(ts%1000000)
+        
+        
+        
         return _t
         pass
     
@@ -366,43 +400,47 @@ class LogParse():
         pass
     
 class Model():
-    def __init__(self):
-        self.sqlite = Sqlite()
-        self.sqlite.tableName = 'log_raw'
-    
-    
+    def __init__(self, filename):
+        
+        self.parse = LogParse()
+        
+        
+        
+        
+        self.filename = filename
+        if self.filename == '':
+            return
+        self.parse.set_filename(self.filename)
     
    
-    def GetFullDataCmd(self, filename):
-        if not filename:
+    def GetFullDataCmd(self):
+        if not self.filename:
             return
-        log = LogParse(filename)
-        cmd = "SELECT * FROM %s"%log.tableName
+        
+        cmd = "SELECT * FROM %s"%self.parse.tableName
         return cmd
         pass
     
-    def GetTimeRangeCmd(self,filename, hl, ll):
-        if not filename:
-            return
-        log = LogParse(filename)
+    def GetTimeRangeCmd(self, hl, ll):
+        
         hl = str(hl)
         hl = hl[::-1].replace(hl[len(hl)-1][::-1], '%'[::-1], 1)[::-1]
         
         ll = str(ll)
         ll = ll[::-1].replace(ll[len(ll)-1][::-1], '%'[::-1], 1)[::-1]
         
-        cmd_hl = "SELECT * FROM %s WHERE ts LIKE '%s' ORDER BY ts DESC LIMIT 1"%(log.tableName, hl)
-        cmd_ll = "SELECT * FROM %s WHERE ts LIKE '%s' ORDER BY ts ASC LIMIT 1"%(log.tableName, ll)
+        cmd_hl = "SELECT * FROM %s WHERE ts LIKE '%s' ORDER BY ts DESC LIMIT 1"%(self.parse.tableName, hl)
+        cmd_ll = "SELECT * FROM %s WHERE ts LIKE '%s' ORDER BY ts ASC LIMIT 1"%(self.parse.tableName, ll)
         
-        data_hl = self.sqlite.execute_command(filename, cmd_hl)
-        data_ll = self.sqlite.execute_command(filename, cmd_ll)
+        data_hl = self.parse.sqlite.execute_command(self.filename, cmd_hl)
+        data_ll = self.parse.sqlite.execute_command(self.filename, cmd_ll)
         
 
         if len(data_hl) == 1 and len(data_ll) == 1:
-            ts_hl = self.sqlite.execute_command(filename, cmd_hl)[0][0]
-            ts_ll = self.sqlite.execute_command(filename, cmd_ll)[0][0]
+            ts_hl = self.parse.sqlite.execute_command(self.filename, cmd_hl)[0][0]
+            ts_ll = self.parse.sqlite.execute_command(self.filename, cmd_ll)[0][0]
 
-            cmd_range = "SELECT * FROM %s WHERE ts BETWEEN %s AND %s ORDER BY ts ASC"%(log.tableName, ts_ll, ts_hl)
+            cmd_range = "SELECT * FROM %s WHERE ts BETWEEN %s AND %s ORDER BY ts ASC"%(self.parse.tableName, ts_ll, ts_hl)
             #raw_data = self.sqlite.execute_command(filename, cmd_range)
             #data = self.SetDataToGrid(filename, raw_data)    
             return cmd_range
@@ -411,21 +449,21 @@ class Model():
             pass
         pass
     
-    def GetRowRangeData(self, filename, cmd, limit, offset):
+    def GetRowRangeData(self, cmd, limit, offset):
         range = " LIMIT %s OFFSET %s"%(limit, offset)
         order = ' ORDER BY ts ASC'
         temp = str(cmd)
-        if not filename:
+        if not self.filename:
             return
         else:
             
-            log = LogParse(filename)
+            
             cmd = cmd + order + range
             
             #print 'start'
-            raw_data = self.sqlite.execute_command(filename, cmd)            
+            raw_data = self.parse.sqlite.execute_command(self.filename, cmd)            
             #print 'get raw data'
-            data = self.SetDataToGrid(filename, raw_data, temp)
+            data = self.SetDataToGrid(raw_data, temp)
             #print 'parsing data'
             return data
         pass
@@ -475,8 +513,8 @@ class Model():
             pass
         pass    
     '''
-    def SetDataToGrid(self, filename, raw_data, *args, **kwargs):
-        cmd = str(args[0])
+    def SetDataToGrid(self, raw_data, cmd):
+        
 
         if not len(raw_data) >= 1:
             return
@@ -484,10 +522,11 @@ class Model():
             pass
         
         
-        log = LogParse(filename)
+        
         first_append_title = True
         data = [[] for _ in range(len(raw_data)+1)]
-        title = self.sqlite.get_col_name(filename, cmd)
+        title = self.parse.find_table_col_name(cmd)
+        
         
         mp_message = ''
         for item in title:
@@ -516,12 +555,12 @@ class Model():
                 if ind == 0:
                     data[row_count].append(row[ind])
                     #data[row_count].append(self.log.timestamp_convert(row[0])['day'])
-                    data[row_count].append(log.timestamp_convert(row[ind])['time'])
-                    data[row_count].append(log.timestamp_convert(row[ind])['ms'])
+                    data[row_count].append(self.parse.timestamp_convert(row[ind])['time'])
+                    data[row_count].append(self.parse.timestamp_convert(row[ind])['ms'])
                 elif ind == 5:
-                    if  log.find_mp_message(row[ind]):
-                        mp_message = log.mp_message_standardize(row[ind])
-                        mp_message = log.mp_message_parse(mp_message)#return OrderedDict()
+                    if  self.parse.find_mp_message(row[ind]):
+                        mp_message = self.parse.mp_message_standardize(row[ind])
+                        mp_message = self.parse.mp_message_parse(mp_message)#return OrderedDict()
                         if first_append_title:
                             for keys in mp_message:
                                 data[0].append(keys)

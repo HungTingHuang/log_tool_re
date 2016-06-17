@@ -239,7 +239,6 @@ class View(wx.Frame):
         
         self.SetSizeHintsSz( wx.DefaultSize, wx.DefaultSize )
         
-       
         hSizer_all = wx.BoxSizer( wx.HORIZONTAL )
         #right side
         vSizer_dirpicker = wx.BoxSizer( wx.VERTICAL )
@@ -398,7 +397,29 @@ class View(wx.Frame):
         
         #hSizer_nb1_1f_bk2 end
         #hSizer_nb1_2f ==============================================================================================
+        #hSizer_nb1_2f_timezone start
+        hSizer_nb1_2f_timezone = wx.BoxSizer( wx.HORIZONTAL )
+        m_choice_timezone = []
+        
+        for utc_offset in range(0, 11):
+            m_choice_timezone.append('UTC -%s:00'%(11-utc_offset))
+        for utc_offset in range(0, 13):
+            m_choice_timezone.append('UTC +%s:00'%utc_offset)
+        
+        
+        c_nb1_2f_timezone = wx.Choice( notebook.panel_01, 
+                                       wx.ID_ANY, 
+                                       wx.DefaultPosition, 
+                                       wx.DefaultSize, 
+                                       m_choice_timezone, 0 )
+        c_nb1_2f_timezone.SetSelection( 11 )
+        hSizer_nb1_2f_timezone.Add( c_nb1_2f_timezone, 0, wx.RIGHT, 5)
+        hSizer_nb1_2f.Add( hSizer_nb1_2f_timezone, 0, wx.ALIGN_CENTER_VERTICAL, 5)
+        #hSizer_nb1_2f_timezone end
+        vst_nb1_2f_0 = wx.StaticLine( notebook.panel_01, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_VERTICAL )
+        hSizer_nb1_2f.Add( vst_nb1_2f_0, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5 )
         #hSizer_nb1_2f_range start
+        
         hSizer_nb1_2f_range = wx.BoxSizer( wx.HORIZONTAL )
         
         cb_nb1_2f_range = wx.CheckBox( notebook.panel_01, 
@@ -625,7 +646,7 @@ class View(wx.Frame):
         self.m_np1_1f_tc_state = tc_nb1_1f_state
         self.m_np1_1f_tc_level =tc_nb1_1f_level
         #ctrl panel_01 2f
-        
+        self.m_np1_2f_timezone = c_nb1_2f_timezone
         self.m_np1_checkBox_01 = cb_nb1_2f_range
         self.m_np1_st_offset = st_nb1_2f_between
         self.m_np1_st_range = cb_nb1_2f_range
