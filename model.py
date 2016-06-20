@@ -5,11 +5,151 @@ from datetime import datetime, date
 import calendar
 from collections import OrderedDict
 import wx.grid as gridlib
-
+from lib2to3.tests.support import proj_dir
+import scanf as scanner
 #import xlrd
 
 #import xlsgrid
 #import numpy
+
+
+class LogInfo():
+    def __init__(self):
+        self.curProj = ''
+        pass
+    def set_current_project(self, proj):
+        self.curProj = proj
+        pass
+        
+    def get_mp_msg_title(self):
+        if self.curProj == 'SSM_AOT':
+            return self.get_ssm_aot_msg_title()
+        else:
+            pass
+        pass
+    def get_mp_msg_pattern(self):
+        if self.curProj == 'SSM_AOT':
+            return self.get_ssm_aot_msg_pattern()
+        else:
+            pass
+        pass
+    
+    def get_ssm_aot_msg_title(self):
+        msg_title = [
+                'power_380', 'power_supply', 'auto_mode', 'btn_lock', 'mpc_error_code', #5
+                'AO #1', 'AO #2', 'AO #3', 'AO #4', 'AO #5', 'AO #6',#6
+                'AI #1', 'AI #2', 'AI #3', 'AI #4', 'AI #5', 'AI #6',#6
+                
+                'cylinder_lower_limit #1', 'cylinder_lower_limit #2', 'cylinder_lower_limit #3',
+                'cylinder_lower_limit #4', 'cylinder_lower_limit #5', 'cylinder_lower_limit #6',#6
+                
+                'motor on output #1', 'motor on output #2', 'motor on output #3',
+                'motor on output #4', 'motor on output #5', 'motor on output #6',#6
+                
+                'motor on input #1', 'motor on input #2', 'motor on input #3',
+                'motor on input #4', 'motor on input #5', 'motor on input #6',#6
+                
+                'brake release output #1', 'brake release output #2', 'brake release output #3',
+                'brake release output #4', 'brake release output #5', 'brake release output #6',#6
+                
+                'brake detect input #1', 'brake detect input #2', 'brake detect input #3',
+                'brake detect input #4', 'brake detect input #5', 'brake detect input #6',#6
+                
+                'servo ai enable #1', 'servo ai enable #2', 'servo ai enable #3',
+                'servo ai enable #4', 'servo ai enable #5', 'servo ai enable #6',#6
+                
+                'servo alarm #1', 'servo alarm #2', 'servo alarm #3',
+                'servo alarm #4', 'servo alarm #5', 'servo alarm #6',#6
+                
+                'servo reset #1', 'servo reset #2', 'servo reset #3',
+                'servo reset #4', 'servo reset #5', 'servo reset #6',#6
+                
+                'servo status #1', 'servo status #2', 'servo status #3',
+                'servo status #4', 'servo status #5', 'servo status #6',#6
+                
+                'servo_alarm_code #1', 'servo_alarm_code #2', 'servo_alarm_code #3',
+                'servo_alarm_code #4', 'servo_alarm_code #5', 'servo_alarm_code #6',#6
+                
+                'servo_alarm_minor_code #1', 'servo_alarm_minor_code #2',
+                'servo_alarm_minor_code #3', 'servo_alarm_minor_code #4',
+                'servo_alarm_minor_code #5', 'servo_alarm_minor_code #6',#6
+                
+                'servo_current #1', 'servo_current #2', 'servo_current #3',
+                'servo_current #4', 'servo_current #5', 'servo_current #6',#6
+                
+                'servo_busvoltage #1', 'servo_busvoltage #2', 'servo_busvoltage #3',
+                'servo_busvoltage #4', 'servo_busvoltage #5', 'servo_busvoltage #6',#6
+                
+                'servo_ai #1', 'servo_ai #2', 'servo_ai #3',
+                'servo_ai #4', 'servo_ai #5', 'servo_ai #6',#6
+                
+                'servo_speed #1', 'servo_speed #2', 'servo_speed #3',
+                'servo_speed #4', 'servo_speed #5', 'servo_speed #6',#6
+                
+                'servo_hour #1', 'servo_hour #2', 'servo_hour #3',
+                'servo_hour #4', 'servo_hour #5', 'servo_hour #6',#6
+                
+                'is_carrier_remoteio_conn',
+                'i_carrier_auto_control',
+                'i_carrier_interlock', 
+                'i_carrier_vfd_error',
+                'o_carrier_moving_forward',
+                'o_carrier_moving_backward',
+                'i_carrier_front',
+                'i_carrier_back', 
+                'i_carrier_over', 
+                'i_carrier_high_speed',
+                
+                'i_carrier_pressure', 
+                'o_carrier_up_lock', 'o_carrier_up_unlock',  
+                'i_carrier_up_lock #1', 'i_carrier_up_lock #2',
+                'i_carrier_up_unlock #1', 'i_carrier_up_unlock #2',
+                'o_carrier_down_lock #1', 'o_carrier_down_unlock #2',
+                'i_carrier_down_lock #1', 'i_carrier_down_lock #2', 
+                'i_carrier_down_unlock #1', 'i_carrier_down_unlock #2',
+                
+                'is_sb_remoteio_conn', 
+                'o_seatbelt_buckle_unlock', 
+                'o_seatbelt_roller_unlock', 
+                
+                'i_seatbelt #1', 'i_seatbelt #2', 'i_seatbelt #3', 'i_seatbelt #4', 'i_seatbelt #5',
+                'i_seatbelt #6', 'i_seatbelt #7', 'i_seatbelt #8', 'i_seatbelt #9', 'i_seatbelt #10',#10
+                
+                'o_seatbelt_led_enable', 'i_all_sb_lock',
+                
+                'i_canopy_auto_control', 
+                'o_canopy_up', 'o_canopy_down', 
+                'i_canopy_up', 'i_canopy_down' 'i_canopy_up_over', 'i_canopy_down_over',
+                
+                'is_gt_remoteio_conn', 'i_gate_auto_control', 'i_gate_interlock', 'i_gate_vfd_error', 
+                'o_gate_close', 'o_gate_open', 
+                'i_gate_close', 'i_gate_close_over_limit', 'i_gate_open', 'i_gate_open_over_limit',
+                
+                'o_door_close #1', 'o_door_close #2', 'i_door_close #1', 'i_door_close #2',#DR
+                
+                'is_es_remoteio_conn', 'o_pwm_orentation_led', 'o_pwm_wind', 'o_spray_enable', 
+                
+                'o_scent_release #1', 'o_scent_release #2', 'o_scent_release #3',
+                
+                'play_last_ms', 'play_sync_ms', 'play_time_ms'#MS
+            ]
+        return msg_title
+        pass
+    def get_ssm_aot_msg_pattern(self):
+        msg_pattern = "ST=%c%c%c%c;ERR=%3c;AO=%3c,%3c,%3c,%3c,%3c,%3c;AI=%3c,%3c,%3c,%3c,%3c,%3c;\
+                LL=%c%c%c%c%c%c;RUN=%c%c%c%c%c%c,%c%c%c%c%c%c;BKR=%c%c%c%c%c%c,%c%c%c%c%c%c;\
+                EN=%c%c%c%c%c%c;ALM=%c%c%c%c%c%c;RST=%c%c%c%c%c%c;SVO=%4c,%4c,%4c,%4c,%4c,%4c;\
+                ALMC=%4c,%4c,%4c,%4c,%4c,%4c;MINC=%16c,%16c,%16c,%16c,%16c,%16c;A=%f,%f,%f,%f,%f,%f;\
+                V=%f,%f,%f,%f,%f,%f;AI%%=%f,%f,%f,%f,%f,%f;SPD=%f,%f,%f,%f,%f,%f;\
+                HR=%4c,%4c,%4c,%4c,%4c,%4c;CA=%c%c%c%c,%c%c,%c%c%c%c;CL=%c,%c%c,%c%c%c%c,%c%c,%c%c%c%c;\
+                SB=%c,%c%c,%c%c%c%c%c%c%c%c%c%c,%c,%c;CN=%c,%c%c,%c%c%c%c;GT=%c%c%c%c,%c%c,%c%c%c%c;\
+                DR=%c%c,%c%c;ES=%c,%2c,%2c,%c,%c%c%c;MS=%6c,%6c,%6c;"
+        return msg_pattern
+        pass
+
+
+
+
 
 class HugeTable(gridlib.PyGridTableBase):
     
@@ -302,7 +442,38 @@ class LogParse():
                 return False
         pass
     
-    
+    def mp_message_parsing(self, mp_message):
+        if isinstance(mp_message, str):
+            pass
+        else:
+            mp_message = ''.join(str(x) for x in mp_message)
+            pass
+        result_mp_message = OrderedDict()
+        _info = LogInfo()
+        if self.curProj == '':
+            return
+        _info.set_current_project(self.curProj)
+        mpc_log_message = mp_message.partition('MPLOG=')[2]
+        log_message = mp_message.partition('MPLOG')[0]
+        
+        _title = _info.get_mp_msg_title()
+        _pattern = _info.get_mp_msg_pattern()
+        
+        
+        
+        _data = scanner.sscanf(log_message, _pattern)
+        
+        
+        
+        for index, key in enumerate(_title):
+            
+            result_mp_message[key] = _data[index]
+            pass
+        
+        result_mp_message['MPLOG'] = mpc_log_message
+        
+        return result_mp_message
+        pass
     
     def mp_message_parse(self, mp_message):
         if isinstance(mp_message, str):
@@ -339,6 +510,9 @@ class LogParse():
         raw_data = mp_message
         result_data = ''
         sep = 'LOG'
+        
+        
+        
         if self.curProj == '':
             pass
         elif self.curProj == 'SSM_Trex':
@@ -347,6 +521,7 @@ class LogParse():
             result_data =  result_data.partition('SVOST')
             result_data = result_data[0]+";"+"SVOST"+result_data[2]
             result_data = result_data + ';'
+            result_data = result_data.replace('LOG', 'MPLOG')
             pass
         else:
             result_data = mp_message.partition(sep)
@@ -357,6 +532,9 @@ class LogParse():
                 pass
             result_data = result_data[0].replace(':', ';').replace("'", ';').replace(" ","")+sep+result_data[2].replace(',', ' ')
             result_data = result_data + ';'
+            
+            result_data = result_data.replace('LOG', 'MPLOG')
+            
             pass
         return result_data
         pass
@@ -463,7 +641,9 @@ class Model():
             #print 'start'
             raw_data = self.parse.sqlite.execute_command(self.filename, cmd)            
             #print 'get raw data'
+           
             data = self.SetDataToGrid(raw_data, temp)
+            
             #print 'parsing data'
             return data
         pass
@@ -559,8 +739,10 @@ class Model():
                     data[row_count].append(self.parse.timestamp_convert(row[ind])['ms'])
                 elif ind == 5:
                     if  self.parse.find_mp_message(row[ind]):
+                        
                         mp_message = self.parse.mp_message_standardize(row[ind])
-                        mp_message = self.parse.mp_message_parse(mp_message)#return OrderedDict()
+                        mp_message = self.parse.mp_message_parsing(mp_message)#return OrderedDict()
+                        
                         if first_append_title:
                             for keys in mp_message:
                                 data[0].append(keys)
@@ -577,6 +759,8 @@ class Model():
                 else:
                     data[row_count].append(row[ind])
                     pass
+                
+                    
                         
                 #data[row_count].append(row[ind])
             row_count += 1
