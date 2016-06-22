@@ -5,13 +5,19 @@ from datetime import datetime, date
 import calendar
 from collections import OrderedDict
 import wx.grid as gridlib
-from lib2to3.tests.support import proj_dir
+#from lib2to3.tests.support import proj_dir
 import scanf as scanner
+import view as View
+import threading as Thd
+import Queue as Que
 #import xlrd
 
 #import xlsgrid
 #import numpy
 
+#global variables
+#mp_message = OrderedDict()
+callback_data = None
 
 class LogInfo():
     def __init__(self):
@@ -24,12 +30,24 @@ class LogInfo():
     def get_mp_msg_title(self):
         if self.curProj == 'SSM_AOT':
             return self.get_ssm_aot_msg_title()
+        elif self.curProj == 'SSM_Trex':
+            return self.get_ssm_trex_msg_title()
+        elif self.curProj == 'SSM_Balloon':
+            return self.get_ssm_balloon_msg_title()
+        elif self.curProj == 'SSM_Odyssey':
+            return self.get_ssm_odyssey_msg_title()
         else:
             pass
         pass
     def get_mp_msg_pattern(self):
         if self.curProj == 'SSM_AOT':
             return self.get_ssm_aot_msg_pattern()
+        elif self.curProj == 'SSM_Trex':
+            return self.get_ssm_trex_msg_pattern()
+        elif self.curProj == 'SSM_Balloon':
+            return self.get_ssm_balloon_msg_pattern()
+        elif self.curProj == 'SSM_Odyssey':
+            return self.get_ssm_odyssey_msg_pattern()
         else:
             pass
         pass
@@ -91,22 +109,31 @@ class LogInfo():
                 
                 'is_carrier_remoteio_conn',
                 'i_carrier_auto_control',
-                'i_carrier_interlock', 
+                'i_carrier_interlock',
                 'i_carrier_vfd_error',
+                
                 'o_carrier_moving_forward',
                 'o_carrier_moving_backward',
                 'i_carrier_front',
-                'i_carrier_back', 
-                'i_carrier_over', 
+                'i_carrier_back',
+                'i_carrier_over',
                 'i_carrier_high_speed',
                 
                 'i_carrier_pressure', 
-                'o_carrier_up_lock', 'o_carrier_up_unlock',  
-                'i_carrier_up_lock #1', 'i_carrier_up_lock #2',
-                'i_carrier_up_unlock #1', 'i_carrier_up_unlock #2',
-                'o_carrier_down_lock #1', 'o_carrier_down_unlock #2',
-                'i_carrier_down_lock #1', 'i_carrier_down_lock #2', 
-                'i_carrier_down_unlock #1', 'i_carrier_down_unlock #2',
+                'o_carrier_up_lock', 
+                'o_carrier_up_unlock',  
+                'i_carrier_up_lock #1', 
+                'i_carrier_up_lock #2',
+                'i_carrier_up_unlock #1', 
+                'i_carrier_up_unlock #2',
+                
+                'o_carrier_down_lock', 
+                'o_carrier_down_unlock',
+                
+                'i_carrier_down_lock[0]', 
+                'i_carrier_down_lock[1]', 
+                'i_carrier_down_unlock[0]', 
+                'i_carrier_down_unlock[1]',
                 
                 'is_sb_remoteio_conn', 
                 'o_seatbelt_buckle_unlock', 
@@ -118,10 +145,17 @@ class LogInfo():
                 'o_seatbelt_led_enable', 'i_all_sb_lock',
                 
                 'i_canopy_auto_control', 
-                'o_canopy_up', 'o_canopy_down', 
-                'i_canopy_up', 'i_canopy_down' 'i_canopy_up_over', 'i_canopy_down_over',
+                'o_canopy_up', 
+                'o_canopy_down', 
+                'i_canopy_up', 
+                'i_canopy_down', 
+                'i_canopy_up_over', 
+                'i_canopy_down_over',
                 
-                'is_gt_remoteio_conn', 'i_gate_auto_control', 'i_gate_interlock', 'i_gate_vfd_error', 
+                'is_gt_remoteio_conn', 
+                'i_gate_auto_control', 
+                'i_gate_interlock', 
+                'i_gate_vfd_error', 
                 'o_gate_close', 'o_gate_open', 
                 'i_gate_close', 'i_gate_close_over_limit', 'i_gate_open', 'i_gate_open_over_limit',
                 
@@ -136,21 +170,267 @@ class LogInfo():
         return msg_title
         pass
     def get_ssm_aot_msg_pattern(self):
-        msg_pattern = "ST=%c%c%c%c;ERR=%3c;AO=%3c,%3c,%3c,%3c,%3c,%3c;AI=%3c,%3c,%3c,%3c,%3c,%3c;\
-                LL=%c%c%c%c%c%c;RUN=%c%c%c%c%c%c,%c%c%c%c%c%c;BKR=%c%c%c%c%c%c,%c%c%c%c%c%c;\
-                EN=%c%c%c%c%c%c;ALM=%c%c%c%c%c%c;RST=%c%c%c%c%c%c;SVO=%4c,%4c,%4c,%4c,%4c,%4c;\
-                ALMC=%4c,%4c,%4c,%4c,%4c,%4c;MINC=%16c,%16c,%16c,%16c,%16c,%16c;A=%f,%f,%f,%f,%f,%f;\
-                V=%f,%f,%f,%f,%f,%f;AI%%=%f,%f,%f,%f,%f,%f;SPD=%f,%f,%f,%f,%f,%f;\
-                HR=%4c,%4c,%4c,%4c,%4c,%4c;CA=%c%c%c%c,%c%c,%c%c%c%c;CL=%c,%c%c,%c%c%c%c,%c%c,%c%c%c%c;\
-                SB=%c,%c%c,%c%c%c%c%c%c%c%c%c%c,%c,%c;CN=%c,%c%c,%c%c%c%c;GT=%c%c%c%c,%c%c,%c%c%c%c;\
-                DR=%c%c,%c%c;ES=%c,%2c,%2c,%c,%c%c%c;MS=%6c,%6c,%6c;"
+        msg_pattern = "ST=%c%c%c%c;\
+                        ERR=%d;\
+                        AO=%x,%x,%x,%x,%x,%x;\
+                        AI=%x,%x,%x,%x,%x,%x;\
+                        LL=%c%c%c%c%c%c;\
+                        RUN=%c%c%c%c%c%c,%c%c%c%c%c%c;\
+                        BKR=%c%c%c%c%c%c,%c%c%c%c%c%c;\
+                        EN=%c%c%c%c%c%c;\
+                        ALM=%c%c%c%c%c%c;\
+                        RST=%c%c%c%c%c%c;\
+                        SVO=%4c,%4c,%4c,%4c,%4c,%4c;\
+                        ALMC=%4c,%4c,%4c,%4c,%4c,%4c;\
+                        MINC=%16c,%16c,%16c,%16c,%16c,%16c;\
+                        A=%f,%f,%f,%f,%f,%f;\
+                        V=%f,%f,%f,%f,%f,%f;\
+                        AI%%=%f,%f,%f,%f,%f,%f;\
+                        SPD=%f,%f,%f,%f,%f,%f;\
+                        HR=%f,%f,%f,%f,%f,%f;\
+                        CA=%c%c%c%c,%c%c,%c%c%c%c;\
+                        CL=%c,%c%c,%c%c%c%c,%c%c,%c%c%c%c;\
+                        SB=%c,%c%c,%c%c%c%c%c%c%c%c%c%c,%c,%c;\
+                        CN=%c,%c%c,%c%c%c%c;\
+                        GT=%c%c%c%c,%c%c,%c%c%c%c;\
+                        DR=%c%c,%c%c;\
+                        ES=%c,%x,%x,%c,%c%c%c;\
+                        MS=%f,%f,%f;"
         return msg_pattern
         pass
 
+    def get_ssm_trex_msg_title(self):
+        msg_title = [
+                     'MPST',
+                
+                     'AO #1', 'AO #2', 'AO #3', 'AO #4', 'AO #5', 'AO #6',
+                     'AI #1', 'AI #2', 'AI #3', 'AI #4', 'AI #5', 'AI #6',
+                
+                     'MAO #1', 'MAO #2', 'MAO #3', 'MAO #4', 'MAO #5', 'MAO #6',
+                     'MAI #1', 'MAI #2', 'MAI #3', 'MAI #4', 'MAI #5', 'MAI #6',
+                
+                     'servo status #1', 'servo status #2', 'servo status #3',
+                     'servo status #4', 'servo status #5', 'servo status #6',
+                
+                     'servo_alarm_code #1', 'servo_alarm_code #2', 'servo_alarm_code #3',
+                     'servo_alarm_code #4', 'servo_alarm_code #5', 'servo_alarm_code #6',
+                
+                     'servo_alarm_minor_code #1', 'servo_alarm_minor_code #2',
+                     'servo_alarm_minor_code #3', 'servo_alarm_minor_code #4',
+                     'servo_alarm_minor_code #5', 'servo_alarm_minor_code #6',
+                
+                     'servo_current #1', 'servo_current #2', 'servo_current #3',
+                     'servo_current #4', 'servo_current #5', 'servo_current #6',
+                
+                     'servo_busvoltage #1', 'servo_busvoltage #2', 'servo_busvoltage #3',
+                     'servo_busvoltage #4', 'servo_busvoltage #5', 'servo_busvoltage #6',
+                
+                     'servo_ai #1', 'servo_ai #2', 'servo_ai #3',
+                     'servo_ai #4', 'servo_ai #5', 'servo_ai #6',
+                
+                     'servo_speed #1', 'servo_speed #2', 'servo_speed #3',
+                     'servo_speed #4', 'servo_speed #5', 'servo_speed #6',
+                
+                     'servo_hour #1', 'servo_hour #2', 'servo_hour #3',
+                     'servo_hour #4', 'servo_hour #5', 'servo_hour #6',
+                
+                     'play_time_ms', 'play_sync_ms', 'play_last_ms'
+                    ]
+        return msg_title
+        pass
+    def get_ssm_trex_msg_pattern(self):
+        msg_pattern =   'MPST=%s ;\
+                        AO=%x,%x,%x,%x,%x,%x;\
+                        AI=%x,%x,%x,%x,%x,%x;\
+                        AO_MAPPING=%x,%x,%x,%x,%x,%x;\
+                        AI_MAPPING=%x,%x,%x,%x,%x,%x;\
+                        DO=%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c;\
+                        DI=%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c,%c;\
+                        SVOST=%4c,%4c,%4c,%4c,%4c,%4c;\
+                        SVOALMC=%4c,%4c,%4c,%4c,%4c,%4c;\
+                        SVOMINC=%16c,%16c,%16c,%16c,%16c,%16c;\
+                        SVOA=%f,%f,%f,%f,%f,%f;\
+                        SVOV=%f,%f,%f,%f,%f,%f;\
+                        SVOAI%%=%f,%f,%f,%f,%f,%f;\
+                        SVOSPD=%f,%f,%f,%f,%f,%f;\
+                        SVOHR=%f,%f,%f,%f,%f,%f;\
+                        ERR=%d;\
+                        PLAY_TIME_MS=%6c;\
+                        PLAY_SYNC_MS=%6c;\
+                        PLAY_LAST_MS=%6c;'
+        return msg_pattern
+    
+    def get_ssm_balloon_msg_title(self):
+        msg_title = [
+                     'MPST',
+                
+                     'AO #1', 'AO #2', 'AO #3', 'AO #4', 'AO #5', 'AO #6',
+                     'AI #1', 'AI #2', 'AI #3', 'AI #4', 'AI #5', 'AI #6',
+                
+                     'MAO #1', 'MAO #2', 'MAO #3', 'MAO #4', 'MAO #5', 'MAO #6',
+                     'MAI #1', 'MAI #2', 'MAI #3', 'MAI #4', 'MAI #5', 'MAI #6',
+                
+                     'POWER_AC', 'POWER_DC', 'AUTO_MODE', 'MOTO_Y_SIGNAL',
+                     'PRESSURE_OVER', 'PRESSURE_READY', 'PRESSURE_SAFE',
+                     'TEMPERATURE_OVER', 'TEMPERATURE_ALARM',
 
+                     'OIL_LEVEL_ALARM', 'OIL_LEVEL_OVER', 'OIL_POLLUTED_O', 'OIL_POLLUTED_B',
+                     'BTN_MOTOR_ON', 'BTN_PRESSURE_ON', 'BTN_MP_STOP',
+                
+                     'MM_VALVE_ON', 'SENSOR_RESID',
+                     #6 none
 
+                     'CYLINDER_LL_1', 'CYLINDER_LL_2', 'CYLINDER_LL_3',
+                     'CYLINDER_LL_4', 'CYLINDER_LL_5', 'CYLINDER_LL_6',
 
+                     'INTER_LOCK_BG1', 'INTER_LOCK_BG2',
+                
+                     'MOTO_ON_Y', 'MOTO_ON_DELTA', 'MOTO_ENABLE',
+                
+                     'BUILD_PRESSURE', 'MAIN_PRESSURE_ON', 'PRESSURE_RELEASE',
+                
+                     'BRAKE_RELEASE_1', 'BRAKE_RELEASE_2', 'BRAKE_RELEASE_3', 
+                     'BRAKE_RELEASE_4', 'BRAKE_RELEASE_5', 'BRAKE_RELEASE_6',
 
+                     'L_MOTO_ON', 'L_PRESSURE_ON', 'L_PRESSURE_NORMAL', 'L_TEMPERATURE_ON',
+                     'L_OIL_LEVEL_NORMAL', 'L_OIL_POLLUTED', 'L_MP_ALIVE', 'MOTO_RESID',
+
+                     #12 none
+                     'ERR',
+                     'play_time_ms', 'play_sync_ms', 'play_last_ms'
+                    ]
+        return msg_title
+        pass
+    def get_ssm_balloon_msg_pattern(self):
+        msg_pattern = 'MPST=%s ;\
+                AO=%x,%x,%x,%x,%x,%x;\
+                AI=%x,%x,%x,%x,%x,%x;\
+                AO_MAPPING=%x,%x,%x,%x,%x,%x;\
+                AI_MAPPING=%x,%x,%x,%x,%x,%x;\
+                DI=%c%c%c%c%c%c%c%c,%c%c%c%c%c%c%c%c,%c%c%*c%*c%*c%*c%*c%*c,%c%c%c%c%c%c%c%c;\
+                DO=%c%c%c%c%c%c%c%c,%c%c%c%c%c%c%c%c,%c%c%c%c%*c%*c%*c%*c,%*c%*c%*c%*c%*c%*c%*c%*c;\
+                ERR=%d;\
+                PLAY_TIME_MS=%f;PLAY_SYNC_MS=%f;PLAY_LAST_MS=%f;'
+        return msg_pattern
+        pass
+    
+    def get_ssm_odyssey_msg_title(self):
+        msg_title = [
+                'ST',
+                
+                'AO #1', 'AO #2', 'AO #3', 'AO #4', 'AO #5', 'AO #6',
+                'AI #1', 'AI #2', 'AI #3', 'AI #4', 'AI #5', 'AI #6',
+                
+                'MAO #1', 'MAO #2', 'MAO #3', 'MAO #4', 'MAO #5', 'MAO #6',
+                'MAI #1', 'MAI #2', 'MAI #3', 'MAI #4', 'MAI #5', 'MAI #6',
+                
+                #DI
+                'POWER_380', 'AUTO_MODE', 'POWER_SUPPLY',
+                #3 none
+
+                'SERVO_READY_1','SERVO_READY_2','SERVO_READY_3',
+                'SERVO_READY_4','SERVO_READY_5','SERVO_READY_6',
+
+                'SERVO_ALARM_1','SERVO_ALARM_2','SERVO_ALARM_3',
+                'SERVO_ALARM_4','SERVO_ALARM_5','SERVO_ALARM_6',
+
+                'BRAKE_POWER_1','BRAKE_POWER_2','BRAKE_POWER_3',
+                'BRAKE_POWER_4','BRAKE_POWER_5','BRAKE_POWER_6',
+
+                'CYLINDER_LL_1','CYLINDER_LL_2','CYLINDER_LL_3', 
+                'CYLINDER_LL_4','CYLINDER_LL_5','CYLINDER_LL_6',
+                'SEAT_BELT',
+                # 1 none
+
+                #D0
+                #1 none
+                'DO_SERVO_ON_1', 'DO_SERVO_ON_2', 'DO_SERVO_ON_3',
+                'DO_SERVO_ON_4', 'DO_SERVO_ON_5', 'DO_SERVO_ON_6',
+
+                'DO_BRAKE_RELEASE_1', 'DO_BRAKE_RELEASE_2', 'DO_BRAKE_RELEASE_3',
+                'DO_BRAKE_RELEASE_4', 'DO_BRAKE_RELEASE_5', 'DO_BRAKE_RELEASE_6',
+
+                'DO_SERVO_RESET_1', 'DO_SERVO_RESET_2', 'DO_SERVO_RESET_3',
+                'DO_SERVO_RESET_3', 'DO_SERVO_RESET_4', 'DO_SERVO_RESET_5',
+
+                'DO_AI_1_ENABLE_1', 'DO_AI_1_ENABLE_2', 'DO_AI_1_ENABLE_3', 
+                'DO_AI_1_ENABLE_4', 'DO_AI_1_ENABLE_5', 'DO_AI_1_ENABLE_6',
+                #7 none
+                
+                #AI_H
+                'AI mapping (I2) #1','AI mapping (I2) #2','AI mapping (I2) #3',
+                'AI mapping (I2) #4','AI mapping (I2) #5','AI mapping (I2) #6',
+                #AI_L
+                'AI mapping (I1) #1','AI mapping (I1) #2','AI mapping (I1) #3',
+                'AI mapping (I1) #4','AI mapping (I1) #5','AI mapping (I1) #6',
+                #AO_H
+                'AO mapping (I2) #1','AO mapping (I2) #2','AO mapping (I2) #3',
+                'AO mapping (I2) #4','AO mapping (I2) #5','AO mapping (I2) #6',
+                #AO_L
+                'AO mapping (I1) #1','AO mapping (I1) #2','AO mapping (I1) #3',
+                'AO mapping (I1) #4','AO mapping (I1) #5','AO mapping (I1) #6',
+                #SVAL
+                'servo alarm #1', 'servo alarm #2', 'servo alarm #3',
+                'servo alarm #4', 'servo alarm #5', 'servo alarm #6',
+                #SVST
+                'servo status #1', 'servo status #2', 'servo status #3',
+                'servo status #4', 'servo status #5', 'servo status #6',
+                
+                #SVALCO
+                'servo_alarm_code #1', 'servo_alarm_code #2', 'servo_alarm_code #3',
+                'servo_alarm_code #4', 'servo_alarm_code #5', 'servo_alarm_code #6',
+                #SVALMO
+                'servo_alarm_minor_code #1', 'servo_alarm_minor_code #2',
+                'servo_alarm_minor_code #3', 'servo_alarm_minor_code #4',
+                'servo_alarm_minor_code #5', 'servo_alarm_minor_code #6',
+                
+                #SVCU
+                'servo_current #1', 'servo_current #2', 'servo_current #3',
+                'servo_current #4', 'servo_current #5', 'servo_current #6',
+                #SVSP
+                'servo_speed #1', 'servo_speed #2', 'servo_speed #3',
+                'servo_speed #4', 'servo_speed #5', 'servo_speed #6',
+                #SVVO
+                'servo_busvoltage #1', 'servo_busvoltage #2', 'servo_busvoltage #3',
+                'servo_busvoltage #4', 'servo_busvoltage #5', 'servo_busvoltage #6',
+                #SVAI
+                'servo_ai #1', 'servo_ai #2', 'servo_ai #3',
+                'servo_ai #4', 'servo_ai #5', 'servo_ai #6',
+                #SVHR
+                'servo_hour #1', 'servo_hour #2', 'servo_hour #3',
+                'servo_hour #4', 'servo_hour #5', 'servo_hour #6',
+                
+                'play_last_ms', 'play_sync_ms', 'play_time_ms',
+                'MPERR'
+                ]
+        return msg_title
+        pass
+    def get_ssm_odyssey_msg_pattern(self):
+        msg_pattern ='ST=%d;\
+                    AO=%x,%x,%x,%x,%x,%x;\
+                    AI=%x,%x,%x,%x,%x,%x;\
+                    MAO=%x,%x,%x,%x,%x,%x;\
+                    MAI=%x,%x,%x,%x,%x,%x;\
+                    DI=%c%c%c%*c%*c%*c%c%c,%c%c%c%c%c%c%c%c,%c%c%c%c%c%c%c%c,%c%c%c%c%c%c%c%*c;\
+                    DO=%*c%c%c%c%c%c%c%c,%c%c%c%c%c%c%c%c,%c%c%c%c%c%c%c%c,%c%*c%*c%*c%*c%*c%*c%*c;\
+                    AI_H=%x,%x,%x,%x,%x,%x;\
+                    AI_L=%x,%x,%x,%x,%x,%x;\
+                    AO_H=%x,%x,%x,%x,%x,%x;\
+                    AO_L=%x,%x,%x,%x,%x,%x;\
+                    SVAL=%c,%c,%c,%c,%c,%c;\
+                    SVST=%c,%c,%c,%c,%c,%c;\
+                    SVALCO=%x,%x,%x,%x,%x,%x;\
+                    SVALMO=%16c,%16c,%16c,%16c,%16c,%16c;\
+                    SVCU=%c,%c,%c,%c,%c,%c;\
+                    SVSP=%f,%f,%f,%f,%f,%f;\
+                    SVVO=%f,%f,%f,%f,%f,%f;\
+                    SVAI=%f,%f,%f,%f,%f,%f;\
+                    SVHR=%f,%f,%f,%f,%f,%f;\
+                    PLLA=%f;PLSY=%f;PLTI=%f;\
+                    MPERR=%d;'
+        return msg_pattern
+        pass
+    
 class HugeTable(gridlib.PyGridTableBase):
     
     def __init__(self, title, data, rows, cols):
@@ -435,34 +715,36 @@ class LogParse():
             else:
                 return False
         else:
-            if len(msg) > 320:
+            if len(msg) > 350:
                 
                 return True
             else:
                 return False
         pass
-    
-    def mp_message_parsing(self, mp_message):
-        if isinstance(mp_message, str):
+    #'''
+    def mp_message_parsing(self, mp_message_t):
+        if isinstance(mp_message_t, str):
             pass
         else:
-            mp_message = ''.join(str(x) for x in mp_message)
+            mp_message_t = ''.join(str(x) for x in mp_message_t)
             pass
+        
+        
         result_mp_message = OrderedDict()
         _info = LogInfo()
         if self.curProj == '':
             return
         _info.set_current_project(self.curProj)
-        mpc_log_message = mp_message.partition('MPLOG=')[2]
-        log_message = mp_message.partition('MPLOG')[0]
+        mpc_log_message = mp_message_t.partition('MPLOG=')[2]
+        log_message = mp_message_t.partition('MPLOG')[0]
         
         _title = _info.get_mp_msg_title()
         _pattern = _info.get_mp_msg_pattern()
-        
+        #print log_message
         
         
         _data = scanner.sscanf(log_message, _pattern)
-        
+        print "."
         
         
         for index, key in enumerate(_title):
@@ -471,19 +753,22 @@ class LogParse():
             pass
         
         result_mp_message['MPLOG'] = mpc_log_message
-        
+        #global mp_message
+        #mp_message = result_mp_message
         return result_mp_message
+       
+        
         pass
-    
-    def mp_message_parse(self, mp_message):
-        if isinstance(mp_message, str):
+    #'''
+    def mp_message_parse(self, mp_message_t):
+        if isinstance(mp_message_t, str):
             pass
         else:
-            mp_message = ''.join(str(x) for x in mp_message)
+            mp_message_t = ''.join(str(x) for x in mp_message_t)
             pass
         result_mp_message = OrderedDict()
         count = 0
-        for x in mp_message.split(';'):
+        for x in mp_message_t.split(';'):
             item = x.partition('=')
             title = item[0]
             for y in item[2].split(','):
@@ -500,14 +785,14 @@ class LogParse():
         
         pass 
     
-    def mp_message_standardize(self, mp_message):
-        if isinstance(mp_message, str):
+    def mp_message_standardize(self, mp_message_t):
+        if isinstance(mp_message_t, str):
             pass
         else:
-            mp_message = ''.join(str(x) for x in mp_message)
+            mp_message_t = ''.join(str(x) for x in mp_message_t)
             pass
         
-        raw_data = mp_message
+        raw_data = mp_message_t
         result_data = ''
         sep = 'LOG'
         
@@ -516,26 +801,32 @@ class LogParse():
         if self.curProj == '':
             pass
         elif self.curProj == 'SSM_Trex':
-            result_data = mp_message.partition(sep)
-            result_data =  result_data[0].replace(':', ';').replace("'", ';').replace(' ','')+'LOG'+result_data[2].replace(',', ' ')
-            result_data =  result_data.partition('SVOST')
+            result_data = mp_message_t.partition(sep)
+            result_data = result_data[0].replace(':', ';').replace("'", ';').replace(' ','')+'LOG'+result_data[2].replace(',', ' ')
+            result_data = result_data.partition('SVOST')
             result_data = result_data[0]+";"+"SVOST"+result_data[2]
             result_data = result_data + ';'
             result_data = result_data.replace('LOG', 'MPLOG')
+            
             pass
         else:
-            result_data = mp_message.partition(sep)
+            result_data = mp_message_t.partition(sep)
             if result_data[1] == '':
                 sep = 'MPLOG'
-                result_data = mp_message.partition(sep)
+                result_data = mp_message_t.partition(sep)
             else:
                 pass
-            result_data = result_data[0].replace(':', ';').replace("'", ';').replace(" ","")+sep+result_data[2].replace(',', ' ')
-            result_data = result_data + ';'
+            result_data = result_data[0].replace(',;', ';').replace(':', ';').replace("'", ';').replace(" ","")+sep+result_data[2].replace(',', ' ')
             
+            result_data = result_data + ';'
             result_data = result_data.replace('LOG', 'MPLOG')
             
             pass
+        
+        if 'MPST=' in result_data:
+            result_data = str(result_data.partition(';')[0]) + ' ;' + str(result_data.partition(';')[2])
+            pass
+        
         return result_data
         pass
     
@@ -576,20 +867,26 @@ class LogParse():
         _d = datetime(year, mon, day, hr, mm, ss)
         return calendar.timegm(_d.timetuple())
         pass
-    
+
+
+   
 class Model():
     def __init__(self, filename):
         
         self.parse = LogParse()
-        
+        self.IsParsing = True
         
         
         
         self.filename = filename
         if self.filename == '':
+            print 'error'
             return
         self.parse.set_filename(self.filename)
     
+    def SetIsParsing(self, IsParsing):
+        self.IsParsing = bool(IsParsing)
+        pass
    
     def GetFullDataCmd(self):
         if not self.filename:
@@ -645,6 +942,8 @@ class Model():
             data = self.SetDataToGrid(raw_data, temp)
             
             #print 'parsing data'
+            global callback_data
+            callback_data = data
             return data
         pass
     '''
@@ -693,10 +992,12 @@ class Model():
             pass
         pass    
     '''
+
     def SetDataToGrid(self, raw_data, cmd):
         
 
         if not len(raw_data) >= 1:
+            print 'error'
             return
         else:
             pass
@@ -708,7 +1009,7 @@ class Model():
         title = self.parse.find_table_col_name(cmd)
         
         
-        mp_message = ''
+        mp_message_t = ''
         for item in title:
             data[0].append(item)
         
@@ -726,7 +1027,7 @@ class Model():
         #print 'title processed'
         
         
-        
+        mp_message = OrderedDict()
         row_count = 1
         for index, row in enumerate(raw_data):
             
@@ -738,24 +1039,32 @@ class Model():
                     data[row_count].append(self.parse.timestamp_convert(row[ind])['time'])
                     data[row_count].append(self.parse.timestamp_convert(row[ind])['ms'])
                 elif ind == 5:
-                    if  self.parse.find_mp_message(row[ind]):
+                    if  self.parse.find_mp_message(row[ind]) and self.IsParsing:
                         
-                        mp_message = self.parse.mp_message_standardize(row[ind])
-                        mp_message = self.parse.mp_message_parsing(mp_message)#return OrderedDict()
-                        
+                        mp_message_t = self.parse.mp_message_standardize(row[ind])
+                        #print str(time.time()) + 'parsing start' 
+                        #mp_message = self.parse.mp_message_parse(mp_message)#return OrderedDict()
+                        mp_message = self.parse.mp_message_parsing(mp_message_t)#return OrderedDict()
+                        #Thd.Thread(target=self.parse.mp_message_parsing, args=(mp_message_t,), name='test').start()
+                        #print mp_message
+                        #print str(time.time()) + 'parsing end'
                         if first_append_title:
                             for keys in mp_message:
                                 data[0].append(keys)
                                 first_append_title = False
                                 pass
                         data[row_count].append('')
+                        #print str(time.time()) + 'set value start'
                         for key in mp_message:
                             data[row_count].append(mp_message[key])
-                        else:
-                            pass
+                        #print str(time.time()) + 'set value end'
+                    #else:
+                        #pass
+                        pass
                     else:
                         data[row_count].append(row[ind])
                         pass
+                    
                 else:
                     data[row_count].append(row[ind])
                     pass

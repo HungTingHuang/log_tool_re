@@ -17,10 +17,11 @@ import openpyxl.styles as xl_sty
 from openpyxl.styles import Font, Color
 from openpyxl.styles import colors
 from collections import OrderedDict
+import threading as Thd
 
 
 class GridDataPage(wx.Panel):
-    def __init__(self, parent, page_name, filename, cmd, grid_row_limit, args, args_index):
+    def __init__(self, parent, page_name, filename, cmd, grid_row_limit, isParsing,  args, args_index):
          
         ##Panel Setting
         self.mPage = wx.Panel(parent, 
@@ -39,9 +40,31 @@ class GridDataPage(wx.Panel):
         statusSizer.Add(spinnerSizer, 1, wx.EXPAND, 5)
         statusSizer.Add(exportSizer, 0, 0, 5)
         
+        '''
+        self.m_model = None
+        self.mPage.cmd = ''
+        self.mPage.condition = ''
+        self.mPage.page_name = ''
+        self.mPage.filename = ''
+        self.mPage.m_data_offset = 0
+        self.mPage.m_data_row_limit = 0
+        self.mPage.m_data = None
         
+        self.mPage.m_data_len = 0
+        self.mPage.m_grid_title = ''
+        self.mPage.m_grid_title_len = 0
+        #self.mPage.m_data = self.mPage.m_data[1]
+        
+        self.mPage.m_current_page_number = 0
+        self.mPage.m_max_page_number = 0
+        self.mPage.show_page_number = 0
+        self.mPage.m_min_page_number = 1
+        '''
+        
+        self.IsParsing = bool(isParsing)
+        #'''
         self.m_model = Model(filename)
-        
+        self.m_model.SetIsParsing(self.IsParsing)
         self.m_progress = args
         
         
@@ -53,10 +76,18 @@ class GridDataPage(wx.Panel):
         self.mPage.filename = filename
         self.mPage.m_data_offset = 0
         self.mPage.m_data_row_limit = grid_row_limit
-        
+        #'''
         self.mPage.m_data = self.m_model.GetRowRangeData(self.mPage.cmd,
                                                          self.mPage.m_data_row_limit, 
                                                          self.mPage.m_data_offset)
+        #'''
+        '''
+        Thd.Thread(target=self.m_model.GetRowRangeData, args=(self.mPage.cmd,
+                                                              self.mPage.m_data_row_limit, 
+                                                              self.mPage.m_data_offset)).start()
+        #global model.callback_data
+        self.mPage.m_data = model.callback_data
+        #'''
         
         if not self.mPage.m_data:
             return
@@ -82,7 +113,7 @@ class GridDataPage(wx.Panel):
         self.mPage.show_page_number = '(  %s  /  %s   )'%(self.mPage.m_current_page_number, self.mPage.m_max_page_number)
         
         self.mPage.m_min_page_number = 1
-        
+        #'''
         self.spinText = wx.TextCtrl(self.mPage,
                                     wx.ID_ANY,
                                     wx.EmptyString,
@@ -138,6 +169,7 @@ class GridDataPage(wx.Panel):
         
         #row_size = len(data)
         #col_size = len(data[0])
+        
         self.mGrid = HugeTableGrid(self.mPage, 
                                    self.mPage.m_data[0], 
                                    self.mPage.m_data,
@@ -145,6 +177,7 @@ class GridDataPage(wx.Panel):
                                    len(self.mPage.m_data[0]))
         
         gridSizer.Add( self.mGrid, 1, wx.EXPAND, 5 )
+        
         self.mPage.SetSizer(pageSizer)
         self.mPage.Layout()
         parent.AddPage(self.mPage, page_name, False)     
@@ -154,7 +187,9 @@ class GridDataPage(wx.Panel):
         parent.Bind(wx.EVT_SPIN_DOWN, self.OnSpinDown, self.spinButton)
         parent.Bind(wx.EVT_BUTTON, self.OnExportExcel, exportButton)
         pass
-            
+    
+    
+    
     
     #callback export excel
     def OnExportExcel(self, evt):
@@ -628,20 +663,21 @@ class Controller:
             _sql = model.Sqlite()
             if _sql.is_sqlite_file(itemPath):
                 _model = model.Model(itemPath)
-                
+                #_model.SetIsParsing(0)#mp_message don`t parse
                 projName = _model.parse.curProj
                 self.current_select_project_name = projName
                 self.show_current_file = '%s: %s'%(projName, itemName)
                 page_name = '%s: %s [preview]'%(projName, itemName)
                 self.m_view.m_statusBar.SetStatusText(self.show_current_file, 0)
                 
-                
+                isParsing = False
                 GridDataPage(self.m_view.m_auimanager, 
                              page_name, 
                              itemPath,
                              _model.GetFullDataCmd(),
                              self.grid_max_row_number,
-                             self.m_view.m_progress,
+                             isParsing,
+                             0,
                              0)
                 
                 
@@ -883,13 +919,27 @@ class Controller:
         else:
             page_name = "%s: %s"%(self.current_select_project_name, 
                                   self.current_select_file_name)
+            isParsing = True
+            '''
+            Thd.Thread(target=GridDataPage, args=(self.m_view.m_auimanager, 
+                                                  page_name, 
+                                                  self.current_select_file_path, 
+                                                  self.cmd, 
+                                                  self.grid_max_row_number,
+                                                  isParsing,
+                                                  0,
+                                                  0)).start()
+            '''
+            #'''
             GridDataPage(self.m_view.m_auimanager, 
                              page_name, 
                              self.current_select_file_path, 
                              self.cmd, 
                              self.grid_max_row_number,
+                             isParsing,
                              0,
                              0)
+            #'''
         pass
         
         

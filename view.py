@@ -212,6 +212,8 @@ class EnhancedStatusBar(wx.StatusBar):
         wx.CallAfter(self.OnSize, None)
 
 
+#global variables
+g_progress = None
 
 
 
@@ -724,7 +726,8 @@ class View(wx.Frame):
         status_bar.SetFieldsCount(4)
         self.SetStatusBar(status_bar)
         self.m_progress = wx.Gauge(status_bar, range=100)
-        
+        global g_progress
+        g_progress = self.m_progress
         
         
         status_bar.AddWidget(self.m_progress, 
