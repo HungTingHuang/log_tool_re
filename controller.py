@@ -21,7 +21,7 @@ import threading as Thd
 
 
 class GridDataPage(wx.Panel):
-    def __init__(self, parent, page_name, filename, cmd, grid_row_limit, isParsing,  args, args_index):
+    def __init__(self, parent, page_name, filename, cmd, grid_row_limit, isParsing, timezone,  args, args_index):
          
         ##Panel Setting
         self.mPage = wx.Panel(parent, 
@@ -65,6 +65,7 @@ class GridDataPage(wx.Panel):
         #'''
         self.m_model = Model(filename)
         self.m_model.SetIsParsing(self.IsParsing)
+        self.m_model.SetTimeZone(timezone)
         self.m_progress = args
         
         
@@ -555,9 +556,11 @@ class Controller:
         
         #notebook_panel_01
         #ctrl panel_01 1f
+        self.tablename = ''
         self.src_fifter = ''
         self.state_fifter = ''
         self.level_fifter = ''
+        self.m_view.Bind(wx.EVT_CHOICE, self.OnTableChoice, self.m_view.m_np1_1f_table)
         self.m_view.Bind(wx.EVT_TEXT, self.OntcSrcChanged, self.m_view.m_np1_1f_tc_src)
         self.m_view.Bind(wx.EVT_TEXT, self.OntcStateChanged, self.m_view.m_np1_1f_tc_state)
         self.m_view.Bind(wx.EVT_TEXT, self.OnLevelSrcChanged, self.m_view.m_np1_1f_tc_level)
@@ -624,7 +627,7 @@ class Controller:
         tree.SetItemImage(root, tree.fldropenidx, wx.TreeItemIcon_Expanded)
         tree.SetItemHasChildren(root, True)    
         pass  
-    def OnSelChanged(self, evt):
+    def OnSelChanged(self, evt):#selected item
         itemPath = self.mGetPathOnItem(evt.GetItem())
         itemName = self.m_view.m_treectrl.GetItemText(evt.GetItem())
         
@@ -637,8 +640,16 @@ class Controller:
             self.current_select_file_path = itemPath
             self.show_current_file = '%s: %s'%(self.current_select_project_name, itemName)
             self.m_view.m_statusBar.SetStatusText(self.show_current_file, 0)
-            
             self.current_select_file_daytime = _model.parse.find_current_project_daytime()
+            
+            
+            #get/update table name
+            tablename = ['Table Name']
+            tables = _sql.execute_command(itemPath, "SELECT name FROM sqlite_master WHERE type = 'table'")
+            for value in tables:
+                tablename.append(str(value[0]))
+            self.m_view.m_np1_1f_table.SetItems(tablename)
+            self.m_view.m_np1_1f_table.SetSelection(0)
         else:
             pass  
     
@@ -663,20 +674,24 @@ class Controller:
             _sql = model.Sqlite()
             if _sql.is_sqlite_file(itemPath):
                 _model = model.Model(itemPath)
-                #_model.SetIsParsing(0)#mp_message don`t parse
+                
+                #setting model
+                
+                
                 projName = _model.parse.curProj
                 self.current_select_project_name = projName
                 self.show_current_file = '%s: %s'%(projName, itemName)
                 page_name = '%s: %s [preview]'%(projName, itemName)
                 self.m_view.m_statusBar.SetStatusText(self.show_current_file, 0)
                 
-                isParsing = False
+                isParsing = False#_model.SetIsParsing(0)#mp_message don`t parse
                 GridDataPage(self.m_view.m_auimanager, 
                              page_name, 
                              itemPath,
                              _model.GetFullDataCmd(),
                              self.grid_max_row_number,
                              isParsing,
+                             self.m_timezone,
                              0,
                              0)
                 
@@ -736,7 +751,10 @@ class Controller:
     #evt notebook panel 01
 
     
-    
+    def OnTableChoice(self, evt):
+        self.tablename = evt.GetString()
+        self.OntcCMDUpdate()
+        pass
     
     def OntcSrcChanged(self, evt):
         
@@ -841,6 +859,12 @@ class Controller:
     def OntcCMDUpdate(self):
         text = self.m_view.m_np1_3f_tc_cmd.GetValue()
         
+        tn = ''
+        if self.tablename == '' or self.tablename == None or self.tablename == 'Table Name':
+            tn = 'log_raw'
+        else:
+            tn = self.tablename
+        
         src = self.src_fifter
         state = self.state_fifter
         lev = self.level_fifter
@@ -900,6 +924,14 @@ class Controller:
                 pass
         
         base += fifter
+        
+        if 'WHERE' in base:
+            base = base.partition(' FROM ')[0] + ' FROM ' + tn +' WHERE ' + base.partition(' WHERE ')[2] 
+        else:
+            base = base.partition(' FROM ')[0] + ' FROM ' + tn
+        
+        
+        
         self.m_view.m_np1_3f_tc_cmd.SetValue(base)
         
         pass
@@ -937,6 +969,7 @@ class Controller:
                              self.cmd, 
                              self.grid_max_row_number,
                              isParsing,
+                             self.m_timezone,
                              0,
                              0)
             #'''
@@ -954,9 +987,8 @@ class Controller:
         
     def OnTimeZoneChoice(self, evt):
         selected_str = self.m_view.m_np1_2f_timezone.GetStringSelection()[4:-3]
-        print selected_str, int(selected_str)
+        #print selected_str, int(selected_str)
         self.m_timezone = int(selected_str)
-        
         pass
     
     def OnNPLLchoice(self, evt):

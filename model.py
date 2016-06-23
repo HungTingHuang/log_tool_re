@@ -170,7 +170,7 @@ class LogInfo():
         return msg_title
         pass
     def get_ssm_aot_msg_pattern(self):
-        msg_pattern = "ST=%c%c%c%c;\
+        msg_pattern = "serial=%*d;state=%*d;ST=%c%c%c%c;\
                         ERR=%d;\
                         AO=%x,%x,%x,%x,%x,%x;\
                         AI=%x,%x,%x,%x,%x,%x;\
@@ -507,6 +507,8 @@ class Sqlite():
         #repeat parameter
         self.count = 0
         self.data_len = 0
+        self.connected_database = None
+        
         pass
     
     
@@ -530,6 +532,44 @@ class Sqlite():
      
     
     #@staticmethod
+    
+    def connect_database(self, filename):
+        if not filename:
+            return
+        
+        try:
+            self.connected_database = lite.connect(filename)
+    
+        except lite.Error, e:
+            print 'Error %s:' % e.args[0]
+            self.connected_database = None
+    
+    def write_command(self, cmd):
+        if not self.connected_database:
+            return
+        try:
+          
+            cur = self.connected_database.cursor()
+            cur.execute(cmd)
+            
+        except lite.Error, e:
+            print 'Error %s:' % e.args[0]
+            
+        pass
+    def commit(self):
+        if not self.connected_database:
+            return
+        try:
+            self.connected_database.commit()
+           
+        except lite.Error, e:
+            print 'Error %s:' % e.args[0]
+    
+       
+    def disconnect_database(self):
+        if self.connected_database:
+                self.connected_database.close()
+    
     def execute_command(self, filename, cmd):
         data = list()
         
@@ -541,6 +581,27 @@ class Sqlite():
             cur = con.cursor()
             cur.execute(cmd)
             data = cur.fetchall()
+        except lite.Error, e:
+            print 'Error %s:' % e.args[0]
+            
+            data = []
+        finally:
+            if (not con==None) and bool(con):
+                con.close()
+            return data
+    
+    
+    def execute_command_commit(self, filename, cmd):
+        
+        
+        if not filename and not cmd:
+            return
+        
+        try:
+            con = lite.connect(filename)
+            cur = con.cursor()
+            cur.execute(cmd)
+            con.commit()
             
         except lite.Error, e:
             print 'Error %s:' % e.args[0]
@@ -548,8 +609,8 @@ class Sqlite():
         finally:
             if con:
                 con.close()
-            return data
-        
+           
+    
     #@staticmethod
     def get_col_name(self, filename, cmd):
         data = list()
@@ -741,10 +802,12 @@ class LogParse():
         _title = _info.get_mp_msg_title()
         _pattern = _info.get_mp_msg_pattern()
         #print log_message
+        #'''
         
+        #'''
         
         _data = scanner.sscanf(log_message, _pattern)
-        print "."
+        
         
         
         for index, key in enumerate(_title):
@@ -845,7 +908,12 @@ class LogParse():
         if hr_offset > 24:
             day_offset = int(_t['day'][-2:])+1
             hr_offset = int(hr_offset %24)
+        elif hr_offset < 0:
+            hr_offset += 24
+            day_offset = int(_t['day'][-2:])-1
+            pass
         else:
+            
             pass
         
         _t['day'] = _t['day'].replace(_t['day'][-2:], str(day_offset))
@@ -875,7 +943,7 @@ class Model():
         
         self.parse = LogParse()
         self.IsParsing = True
-        
+        self.timezone = 0
         
         
         self.filename = filename
@@ -883,6 +951,12 @@ class Model():
             print 'error'
             return
         self.parse.set_filename(self.filename)
+    
+    
+    def SetTimeZone(self, timezone):
+        self.timezone = timezone
+        self.parse.set_timezone(self.timezone)
+        pass
     
     def SetIsParsing(self, IsParsing):
         self.IsParsing = bool(IsParsing)
@@ -937,13 +1011,15 @@ class Model():
             
             #print 'start'
             raw_data = self.parse.sqlite.execute_command(self.filename, cmd)            
+            
+            
             #print 'get raw data'
            
             data = self.SetDataToGrid(raw_data, temp)
             
             #print 'parsing data'
-            global callback_data
-            callback_data = data
+            #global callback_data
+            #callback_data = data
             return data
         pass
     '''
@@ -1026,6 +1102,8 @@ class Model():
             data[0][data[0].index('msg')] = 'mc_log'
         #print 'title processed'
         
+        #set timezone
+        self.parse.timezone = self.timezone
         
         mp_message = OrderedDict()
         row_count = 1
@@ -1044,6 +1122,7 @@ class Model():
                         mp_message_t = self.parse.mp_message_standardize(row[ind])
                         #print str(time.time()) + 'parsing start' 
                         #mp_message = self.parse.mp_message_parse(mp_message)#return OrderedDict()
+                        
                         mp_message = self.parse.mp_message_parsing(mp_message_t)#return OrderedDict()
                         #Thd.Thread(target=self.parse.mp_message_parsing, args=(mp_message_t,), name='test').start()
                         #print mp_message
@@ -1062,11 +1141,23 @@ class Model():
                         #pass
                         pass
                     else:
-                        data[row_count].append(row[ind])
+                        
+                        if not row[ind] == None:
+                            data[row_count].append(row[ind])
+                        '''
+                        if not row(ind)[0] == 0:
+                            data[row_count].append(row[ind])
+                        #'''
                         pass
                     
                 else:
-                    data[row_count].append(row[ind])
+                    
+                    if not row[ind] == None:
+                        data[row_count].append(row[ind])
+                    '''
+                    if not row(ind)[0] == 0:
+                        data[row_count].append(row[ind])
+                    #'''
                     pass
                 
                     
@@ -1107,7 +1198,171 @@ class Model():
         #print 'write to array'
         return data
         pass
+    
+    def SetDataToQuene(self, raw_data, cmd, quene):
+        
+        mQue = quene
+        if not len(raw_data) >= 1:
+            print 'error'
+            return
+        else:
+            pass
+        
+        
+        
+        first_append_title = True
+        data = [[] for _ in range(len(raw_data)+1)]
+        title = self.parse.find_table_col_name(cmd)
+        
+        
+        mp_message_t = ''
+        for item in title:
+            data[0].append(item)
+        
+        iter = data[0].index('ts')
+        data[0][iter] = 'timestamp'
+        iter +=1
+        data[0].insert(iter, 'time')
+        iter +=1
+        data[0].insert(iter, 'ms')
+        
+        if 'msg' in data[0]:
+            data[0][data[0].index('msg')] = 'mc_log'
+        
+        
+        mp_message = OrderedDict()
+        row_count = 1
+        for index, row in enumerate(raw_data):
+            
+            for ind, value in enumerate(row):
+                
+                if ind == 0:
+                    data[row_count].append(row[ind])
+                   
+                    data[row_count].append(self.parse.timestamp_convert(row[ind])['time'])
+                    data[row_count].append(self.parse.timestamp_convert(row[ind])['ms'])
+                elif ind == 5:
+                    if  self.parse.find_mp_message(row[ind]) and self.IsParsing:
+                        
+                        mp_message_t = self.parse.mp_message_standardize(row[ind])
+                       
+                        mp_message = self.parse.mp_message_parsing(mp_message_t)#return OrderedDict()
+                        #write title to quene
+                        if first_append_title:
+                            for keys in mp_message:
+                                data[0].append(keys)
+                                first_append_title = False
+                                pass
+                            if not mQue.full():
+                                mQue.put_nowait(data[0])
+                            else:
+                                mQue.put(data[0], True)
+                        #   
+                            
+                        data[row_count].append('')
+                        
+                        for key in mp_message:
+                            data[row_count].append(mp_message[key])
+    
+                        pass
+                    else:
+                        data[row_count].append(row[ind])
+                        pass
+                    
+                else:
+                    data[row_count].append(row[ind])
+                    pass
+            if not mQue.full():
+                mQue.put_nowait(data[row_count])
+            else:
+                mQue.put(data[row_count], True)
+            row_count += 1
+        pass
+    
+    def SetMultiDataToQuene(self, raw_data, cmd, quene):
+        
+        mQue = quene
+        
+        if not len(raw_data) >= 1:
+            print 'no data'
+            return
+        else:
+            pass
+        
+        
+        #memory initialize
+        first_append_title = True
+        data = [[] for _ in range(len(raw_data)+1)]
+        #
+        title = self.parse.find_table_col_name(cmd)
+        
+        
+        mp_message_t = ''
+        for item in title:
+            data[0].append(item)
+        
+        iter = data[0].index('ts')
+        data[0][iter] = 'timestamp'
+        iter +=1
+        data[0].insert(iter, 'time')
+        iter +=1
+        data[0].insert(iter, 'ms')
+        
+        if 'msg' in data[0]:
+            data[0][data[0].index('msg')] = 'mc_log'
+        
+        
+        mp_message = OrderedDict()
+        row_count = 1
+        for index, row in enumerate(raw_data):
+            
+            for ind, value in enumerate(row):
+                
+                if ind == 0:
+                    data[row_count].append(row[ind])
+                   
+                    data[row_count].append(self.parse.timestamp_convert(row[ind])['time'])
+                    data[row_count].append(self.parse.timestamp_convert(row[ind])['ms'])
+                elif ind == 5:
+                    if  self.parse.find_mp_message(row[ind]) and self.IsParsing:
+                        
+                        mp_message_t = self.parse.mp_message_standardize(row[ind])
+                       
+                        mp_message = self.parse.mp_message_parsing(mp_message_t)#return OrderedDict()
+                        #write title to quene
+                        if first_append_title:
+                            for keys in mp_message:
+                                data[0].append(keys)
+                                first_append_title = False
+                                pass
+                            if not mQue.full():
+                                mQue.put_nowait(data[0])
+                            else:
+                                mQue.put(data[0], True)
+                        #   
+                            
+                        data[row_count].append('')
+                        
+                        for key in mp_message:
+                            data[row_count].append(mp_message[key])
+    
+                        pass
+                    else:
+                        data[row_count].append(row[ind])
+                        pass
+                    
+                else:
+                    data[row_count].append(row[ind])
+                    pass
+            if not mQue.full():
+                mQue.put_nowait(data[row_count])
+            else:
+                mQue.put(data[row_count], True)
+            row_count += 1
+        pass
 
+    
+    
     """
     def GetDataOnItemActivated(self, filename, row_limit):
         log = LogParse(filename)

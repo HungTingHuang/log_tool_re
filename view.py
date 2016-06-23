@@ -302,6 +302,25 @@ class View(wx.Frame):
         vSizer_panel_01.Add( hSizer_nb1_3f, 0, wx.BOTTOM|wx.EXPAND|wx.ALIGN_RIGHT, 1 )
         #hSizer_nb1_1f ==============================================================================================
         #hSizer_nb1_1f_src start
+        hSizer_nb1_1f_table = wx.BoxSizer( wx.HORIZONTAL )
+        m_choice_table = ['Table Name']
+        
+        c_nb1_1f_table = wx.Choice( notebook.panel_01, 
+                                       wx.ID_ANY, 
+                                       wx.DefaultPosition, 
+                                       wx.DefaultSize, 
+                                       m_choice_table, 0 )
+        
+        c_nb1_1f_table.SetSelection(0)
+        
+        hSizer_nb1_1f_table.Add( c_nb1_1f_table, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.LEFT, 5 )
+        hSizer_nb1_1f.Add( hSizer_nb1_1f_table, 0, wx.EXPAND|wx.ALIGN_CENTER_VERTICAL, 5 )
+        
+        vst_nb1_1f_0 = wx.StaticLine( notebook.panel_01, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.LI_VERTICAL )
+        hSizer_nb1_1f.Add( vst_nb1_1f_0, 0, wx.EXPAND|wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
+        
+        
+        
         hSizer_nb1_1f_src = wx.BoxSizer( wx.HORIZONTAL )
         st_nb1_1f_src = wx.StaticText( notebook.panel_01, 
                                        wx.ID_ANY, 
@@ -644,6 +663,8 @@ class View(wx.Frame):
         
         #ctrl panel_01
         #ctrl panel_01 1f
+        #m_choice_table
+        self.m_np1_1f_table = c_nb1_1f_table
         self.m_np1_1f_tc_src = tc_nb1_1f_sc
         self.m_np1_1f_tc_state = tc_nb1_1f_state
         self.m_np1_1f_tc_level =tc_nb1_1f_level
