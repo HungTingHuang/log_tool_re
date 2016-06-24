@@ -39,7 +39,7 @@ class GridDataPage(wx.Panel):
         pageSizer.Add( gridSizer, 0, wx.EXPAND, 5 )
         statusSizer.Add(spinnerSizer, 1, wx.EXPAND, 5)
         statusSizer.Add(exportSizer, 0, 0, 5)
-        
+        view.g_progress.SetValue(0)
         '''
         self.m_model = None
         self.mPage.cmd = ''
@@ -78,9 +78,13 @@ class GridDataPage(wx.Panel):
         self.mPage.m_data_offset = 0
         self.mPage.m_data_row_limit = grid_row_limit
         #'''
+        
+        view.g_progress.SetValue(20)
         self.mPage.m_data = self.m_model.GetRowRangeData(self.mPage.cmd,
                                                          self.mPage.m_data_row_limit, 
                                                          self.mPage.m_data_offset)
+        
+        
         #'''
         '''
         Thd.Thread(target=self.m_model.GetRowRangeData, args=(self.mPage.cmd,
@@ -183,6 +187,8 @@ class GridDataPage(wx.Panel):
         self.mPage.Layout()
         parent.AddPage(self.mPage, page_name, False)     
         
+        view.g_progress.SetValue(100)
+        View.Info("Process has Done!")
         
         parent.Bind(wx.EVT_SPIN_UP, self.OnSpinUp, self.spinButton)
         parent.Bind(wx.EVT_SPIN_DOWN, self.OnSpinDown, self.spinButton)
@@ -274,7 +280,7 @@ class GridDataPage(wx.Panel):
         pass
     
     def OnSpinUp(self, evt):
-        
+        view.g_progress.SetValue(0)
         row_limit = self.mPage.m_data_row_limit
         if self.mPage.m_current_page_number <= self.mPage.m_max_page_number and self.mPage.m_current_page_number >= self.mPage.m_min_page_number:
             if self.mPage.m_current_page_number == self.mPage.m_max_page_number:
@@ -297,15 +303,17 @@ class GridDataPage(wx.Panel):
                                                          self.mPage.m_data_offset)
         self.mPage.show_page_number = '(  %s  /  %s   )'%(self.mPage.m_current_page_number, self.mPage.m_max_page_number)
         self.spinText.SetValue(str(self.mPage.show_page_number))
-        
+        view.g_progress.SetValue(20)
         self.mGrid.OnUpdate(self.mPage.m_data[0], 
                            self.mPage.m_data, 
                            len(self.mPage.m_data), 
                            len(self.mPage.m_data[0]))
-        
+        view.g_progress.SetValue(100)
+        View.Info("Process has Done!")
         pass
     
     def OnSpinDown(self, evt):
+        view.g_progress.SetValue(0)
         row_limit = self.mPage.m_data_row_limit
         if self.mPage.m_current_page_number <= self.mPage.m_max_page_number and self.mPage.m_current_page_number >= self.mPage.m_min_page_number:
             if self.mPage.m_current_page_number == self.mPage.m_min_page_number:
@@ -329,12 +337,13 @@ class GridDataPage(wx.Panel):
                                                          self.mPage.m_data_offset)
         self.mPage.show_page_number = '(  %s  /  %s   )'%(self.mPage.m_current_page_number, self.mPage.m_max_page_number)
         self.spinText.SetValue(str(self.mPage.show_page_number))
+        view.g_progress.SetValue(20)
         self.mGrid.OnUpdate(self.mPage.m_data[0], 
                             self.mPage.m_data,
                             len(self.mPage.m_data), 
                             len(self.mPage.m_data[0]))
-        
-        
+        view.g_progress.SetValue(100)
+        View.Info("Process has Done!")
         
         
         
@@ -949,6 +958,7 @@ class Controller:
         if not self.current_select_file_path:
             pass
         else:
+            
             page_name = "%s: %s"%(self.current_select_project_name, 
                                   self.current_select_file_name)
             isParsing = True
@@ -993,11 +1003,17 @@ class Controller:
     
     def OnNPLLchoice(self, evt):
         ll_hr = int(self.m_view.m_np1_choice_01.GetStringSelection().split(' ')[0])
+        
+        ll_hr -= self.m_timezone#timezone offset
+        if ll_hr < 0:
+            ll_hr += 24
+        
         ll_mm = int(self.m_view.m_np1_choice_02.GetStringSelection().split(' ')[0])
         self.ts_ll =''
         
         if (ll_hr or ll_mm) and self.current_select_file_path:
             _model = model.Model(self.current_select_file_path)
+            #_model.SetTimeZone(self.m_timezone)
             if self.m_view.m_np1_checkBox_01.IsChecked():#range mode
                 string_split = self.current_select_file_daytime.split('-')
                 yy = int(string_split[0])
@@ -1005,7 +1021,10 @@ class Controller:
                 dd = int(string_split[2])
                 
                 
+                
+                
                 self.ts_ll_value = _model.parse.unixtime_covert(yy, MM, dd, ll_hr, ll_mm, 00)
+                
                 self.ts_ll = '(ts>=' + str(self.ts_ll_value) + '000000' + ')'            
                 pass
             else:#SINGLE
@@ -1070,8 +1089,10 @@ class Controller:
                 dd = int(string_split[2])
                 
                 _model = model.Model(self.current_select_file_path)
-                
-                
+                #_model.SetTimeZone(self.m_timezone)
+                hl_hr -= self.m_timezone#timezone offset
+                if hl_hr < 0:
+                    hl_hr += 24
                 
                 self.ts_hl_value = _model.parse.unixtime_covert(yy, MM, dd, hl_hr, hl_mm, 00)
                 self.ts_hl = '(ts<=' + str(self.ts_hl_value) + '000000' + ')'            

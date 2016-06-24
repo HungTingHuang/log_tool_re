@@ -10,6 +10,7 @@ import scanf as scanner
 import view as View
 import threading as Thd
 import Queue as Que
+import multiprocessing as mp
 #import xlrd
 
 #import xlsgrid
@@ -498,8 +499,62 @@ class HugeTable(gridlib.PyGridTableBase):
     
     def SetValue(self, row, col, value):
         self.data.write('SetValue(%d, %d, "%s") ignored.\n' % (row, col, value))
+''' 
+class ParseWorker():
+    def __init__(self):
+        
+        
+        self.workerCount = mp.cpu_count()
+        self.workerPool = Que.Queue(100)
+        self.jobsMaximum = 100
+        self.jobsPoll = Que.Queue(self.jobsMaximum)
+        self.BackThd = None
+        print self.workerCount
     
+    def Done(self):
+        if not self.jobsPoll.empty():
+            self.jobsPoll.get_nowait()
+        #print 'done'
+        
+        pass
     
+    def proc(self):
+    
+        job = None
+        if  not self.jobsPoll.empty():
+            job = self.jobsPoll.get_nowait()
+        else:
+            print 'get job wait...'
+            job = self.jobsPoll.get(True,None)
+        
+        p = None
+        p = mp.Process(target=job, args=())
+        if not self.workerPool.full():
+            p.start()
+            self.workerPool.put_nowait(p)
+        else:
+            self.workerPoll.put(p, True, None)
+            print 'proc job wait...'
+            p.start()
+        
+        pass
+    
+    def Start(self):
+        if self.BackThd == None:
+            self.BackThd = Thd.Thread(target=self.proc, args=()).start()
+    
+    def AddJobs(self, job):
+        if not self.jobsPoll.full():
+            self.jobsPoll.put_nowait(job)
+        elif self.jobsPoll.full():
+            print 'add job wait...'
+            self.jobsPoll.put(job, True, None)
+        else:
+            print 'error'
+            pass
+        print self.jobsPoll.qsize()
+        pass
+'''    
 class Sqlite():
     def __init__(self):
         self.tableName = ''
@@ -541,8 +596,8 @@ class Sqlite():
             self.connected_database = lite.connect(filename)
     
         except lite.Error, e:
-            print 'Error %s:' % e.args[0]
-            self.connected_database = None
+            err = 'Error %s:' % e.args[0]
+            View.View.Warring(err)
     
     def write_command(self, cmd):
         if not self.connected_database:
@@ -553,7 +608,8 @@ class Sqlite():
             cur.execute(cmd)
             
         except lite.Error, e:
-            print 'Error %s:' % e.args[0]
+            err = 'Error %s:' % e.args[0]
+            View.View.Warring(err)
             
         pass
     def commit(self):
@@ -563,7 +619,8 @@ class Sqlite():
             self.connected_database.commit()
            
         except lite.Error, e:
-            print 'Error %s:' % e.args[0]
+            err = 'Error %s:' % e.args[0]
+            View.View.Warring(err)
     
        
     def disconnect_database(self):
@@ -582,7 +639,8 @@ class Sqlite():
             cur.execute(cmd)
             data = cur.fetchall()
         except lite.Error, e:
-            print 'Error %s:' % e.args[0]
+            err = 'Error %s:' % e.args[0]
+            View.View.Warring(err)
             
             data = []
         finally:
@@ -604,7 +662,8 @@ class Sqlite():
             con.commit()
             
         except lite.Error, e:
-            print 'Error %s:' % e.args[0]
+            err = 'Error %s:' % e.args[0]
+            View.View.Warring(err)
             data = []
         finally:
             if con:
@@ -847,6 +906,50 @@ class LogParse():
         return result_mp_message
         
         pass 
+    def mp_message_parse_to_quene(self, mp_message_t, quene, target):
+        if isinstance(mp_message_t, str):
+            pass
+        else:
+            mp_message_t = ''.join(str(x) for x in mp_message_t)
+            pass
+        
+        
+        result_mp_message = OrderedDict()
+        _info = LogInfo()
+        if self.curProj == '':
+            return
+        _info.set_current_project(self.curProj)
+        mpc_log_message = mp_message_t.partition('MPLOG=')[2]
+        log_message = mp_message_t.partition('MPLOG')[0]
+        
+        _title = _info.get_mp_msg_title()
+        _pattern = _info.get_mp_msg_pattern()
+        #print log_message
+        #'''
+        
+        #'''
+        
+        _data = scanner.sscanf(log_message, _pattern)
+        
+        
+        
+        for index, key in enumerate(_title):
+            
+            result_mp_message[key] = _data[index]
+            pass
+        
+        result_mp_message['MPLOG'] = mpc_log_message
+        #global mp_message
+        #mp_message = result_mp_message
+        
+        if not quene.full():
+            quene.put_nowait(result_mp_message)
+        target()
+        #return result_mp_message
+       
+        
+        pass
+    #'''
     
     def mp_message_standardize(self, mp_message_t):
         if isinstance(mp_message_t, str):
@@ -951,7 +1054,7 @@ class Model():
             print 'error'
             return
         self.parse.set_filename(self.filename)
-    
+        #self.worker = ParseWorker()
     
     def SetTimeZone(self, timezone):
         self.timezone = timezone
@@ -1011,10 +1114,11 @@ class Model():
             
             #print 'start'
             raw_data = self.parse.sqlite.execute_command(self.filename, cmd)            
+            #get Data
             
             
             #print 'get raw data'
-           
+            View.g_progress.Pulse()
             data = self.SetDataToGrid(raw_data, temp)
             
             #print 'parsing data'
@@ -1071,7 +1175,7 @@ class Model():
 
     def SetDataToGrid(self, raw_data, cmd):
         
-
+        
         if not len(raw_data) >= 1:
             print 'error'
             return
@@ -1108,7 +1212,6 @@ class Model():
         mp_message = OrderedDict()
         row_count = 1
         for index, row in enumerate(raw_data):
-            
             for ind, value in enumerate(row):
                 
                 if ind == 0:
@@ -1124,9 +1227,11 @@ class Model():
                         #mp_message = self.parse.mp_message_parse(mp_message)#return OrderedDict()
                         
                         mp_message = self.parse.mp_message_parsing(mp_message_t)#return OrderedDict()
+                        
                         #Thd.Thread(target=self.parse.mp_message_parsing, args=(mp_message_t,), name='test').start()
                         #print mp_message
                         #print str(time.time()) + 'parsing end'
+                        
                         if first_append_title:
                             for keys in mp_message:
                                 data[0].append(keys)
@@ -1196,9 +1301,10 @@ class Model():
             row_count += 1
             '''
         #print 'write to array'
+        
         return data
         pass
-    
+'''    
     def SetDataToQuene(self, raw_data, cmd, quene):
         
         mQue = quene
@@ -1278,10 +1384,10 @@ class Model():
                 mQue.put(data[row_count], True)
             row_count += 1
         pass
-    
-    def SetMultiDataToQuene(self, raw_data, cmd, quene):
+
+    def SetMultiDataToQuene(self, raw_data, cmd):
         
-        mQue = quene
+        resQue = Que.Queue(1)
         
         if not len(raw_data) >= 1:
             print 'no data'
@@ -1327,19 +1433,19 @@ class Model():
                     if  self.parse.find_mp_message(row[ind]) and self.IsParsing:
                         
                         mp_message_t = self.parse.mp_message_standardize(row[ind])
-                       
-                        mp_message = self.parse.mp_message_parsing(mp_message_t)#return OrderedDict()
-                        #write title to quene
+                        
+                        self.worker.AddJobs(
+                                            self.parse.mp_message_parse_to_quene(
+                                                                                 mp_message_t, 
+                                                                                 resQue,
+                                                                                 self.worker.Done))
+                        mp_message = resQue.get(True, None)
+                        
                         if first_append_title:
                             for keys in mp_message:
                                 data[0].append(keys)
                                 first_append_title = False
                                 pass
-                            if not mQue.full():
-                                mQue.put_nowait(data[0])
-                            else:
-                                mQue.put(data[0], True)
-                        #   
                             
                         data[row_count].append('')
                         
@@ -1354,85 +1460,14 @@ class Model():
                 else:
                     data[row_count].append(row[ind])
                     pass
-            if not mQue.full():
-                mQue.put_nowait(data[row_count])
-            else:
-                mQue.put(data[row_count], True)
+           
             row_count += 1
+        return data
         pass
-
+'''
+   
     
     
-    """
-    def GetDataOnItemActivated(self, filename, row_limit):
-        log = LogParse(filename)
-        if row_limit == 0:
-            cmd = "SELECT * FROM %s"%log.tableName
-        else:    
-            cmd = "SELECT * FROM %s LIMIT %s"%(log.tableName, row_limit)
-        #cmd = "SELECT * FROM %s"%self.log.tableName
-        row_data = self.sqlite.execute_command(filename, cmd)
-        data = self.SetDataToGrid(filename, row_data)
-        
-        if len(row_data) < 1:
-            return None
-        else:
-            data = self.SetDataToGrid(filename, row_data)
-            return data
-            
-        '''
-        first_append_title = True
-        data = [[] for _ in range(row_limit+1)]
-        title = self.sqlite.get_col_name(filename, '')
-        mp_message = ''
-        
-        for item in title:
-            data[0].append(item)
-        
-        iter = data[0].index('ts')
-        data[0][iter] = 'timestamp'
-        iter +=1
-        #data[0].insert(iter, 'day')
-        #iter +=1
-        data[0].insert(iter, 'time')
-        iter +=1
-        data[0].insert(iter, 'ms')
-        data[0][data[0].index('msg')] = 'mc_log' 
-        
-        cmd = "SELECT * FROM %s LIMIT %s"%(self.log.tableName, row_limit)
-        #cmd = "SELECT * FROM %s"%self.log.tableName
-        temp = self.sqlite.execute_command(filename, cmd)
-        
-        row_count = 1
-        for row in temp:
-            data[row_count].append(row[0])
-            #data[row_count].append(self.log.timestamp_convert(row[0])['day'])
-            data[row_count].append(self.log.timestamp_convert(row[0])['time'])
-            data[row_count].append(self.log.timestamp_convert(row[0])['ms'])
-            data[row_count].append(row[1])
-            data[row_count].append(row[2])
-            data[row_count].append(row[3])
-            data[row_count].append(row[4])
-            if self.log.find_mp_message(row[5]):
-                mp_message = self.log.mp_message_standardize(row[5])
-                mp_message = self.log.mp_message_parse(mp_message)#return OrderedDict()
-                if first_append_title:
-                    for keys in mp_message:
-                        data[0].append(keys)
-                    first_append_title = False
-                    pass
-                data[row_count].append('')
-                for key in mp_message:
-                    data[row_count].append(mp_message[key])
-                    pass
-            else:
-                data[row_count].append(row[5])
-                pass    
-            row_count += 1
-        '''
-        
-        pass
-    """
 
         #self, sql_name, col_limit, 
    

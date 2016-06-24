@@ -212,7 +212,7 @@ class EnhancedStatusBar(wx.StatusBar):
         wx.CallAfter(self.OnSize, None)
 
 
-#global variables
+#view global variables
 g_progress = None
 
 
@@ -779,6 +779,25 @@ class View(wx.Frame):
         
         pass
         
-   
-        
-        
+    @staticmethod
+    def Info(text):
+        dial = wx.MessageDialog(None, text, 'Info', wx.OK)
+        dial.ShowModal()
+    
+    @staticmethod
+    def Warring(text):
+        dial = wx.MessageDialog(None, text, 'Error', 
+            wx.OK | wx.ICON_ERROR)
+        dial.ShowModal()
+    
+    @staticmethod    
+    def Question(text):
+        dial = wx.MessageDialog(None, text, 'Question', 
+            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+        dial.ShowModal()
+    
+    @staticmethod
+    def Alert(text):
+        dial = wx.MessageDialog(None, text, 'Exclamation', 
+            wx.OK | wx.ICON_EXCLAMATION)
+        dial.ShowModal()
