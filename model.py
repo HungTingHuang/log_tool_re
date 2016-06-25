@@ -1272,34 +1272,7 @@ class Model():
             
             
             
-            
-            '''
-            data[row_count].append(row[0])
-            #data[row_count].append(self.log.timestamp_convert(row[0])['day'])
-            data[row_count].append(log.timestamp_convert(row[0])['time'])
-            data[row_count].append(log.timestamp_convert(row[0])['ms'])
-            data[row_count].append(row[1])
-            data[row_count].append(row[2])
-            data[row_count].append(row[3])
-            data[row_count].append(row[4])
-             
-            if log.find_mp_message(row[5]):
-                mp_message = log.mp_message_standardize(row[5])
-                mp_message = log.mp_message_parse(mp_message)#return OrderedDict()
-                if first_append_title:
-                    for keys in mp_message:
-                        data[0].append(keys)
-                    first_append_title = False
-                    pass
-                data[row_count].append('')
-                for key in mp_message:
-                    data[row_count].append(mp_message[key])
-                    pass
-            else:
-                data[row_count].append(row[5])
-                pass    
-            row_count += 1
-            '''
+      
         #print 'write to array'
         
         return data
