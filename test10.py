@@ -98,7 +98,7 @@ total_time = float(end_time) - float(start_time)
 #get rawdata
 '''
 import multiprocessing as mp
-from multiprocessing import Process as pro, Queue as que, Pool as Po
+from multiprocessing import Process as pro, Queue as que, Pool as pool, Manager
 import time,os,sys,math
 
 def f(name):
@@ -111,63 +111,99 @@ def f(name):
     print   name,'ok'
     sys.stdout.flush()
 
-def add(array, res):
-    print res
-    res.put('1', True, None)
-        
+def add(data, res):
+    #res.append(10)
+    
+    for index, rows in enumerate(data):
+        temp = []
+        for value in rows:
+            temp.append(value + 100) 
+        res.append(temp)
+    
+    
+    '''
+    for value in data:
+        value = int(value) + 100
+        res.append(value)
+    #''' 
 
-class BigDataParser():
+class DataParser():
 
     def __init__(self):
         self.data = None
         self.datalen = 0
-        self.procCount = 4
+        self.processor_count = 4 #mp.cpu_count()
+        
         self.divData = []
-        self.resultData = [0]
-        #self.resData = [0]
+        self.resData = []
+        self.outputData = [] 
+        
+        
         
     def import_data(self, data):
         self.data = data
         self.datalen = len(self.data)
-        #self.resultData = que.Queue(self.datalen)
+        
+        self.divData = [[] for _ in range(self.processor_count)]
+        
+        self.resData = [mp.Manager().list() for _ in range(self.processor_count)]
+        self.outputData = [[] for _ in range(self.datalen)]
     
     def divide_data(self):
         
         data = self.data
-        self.divData = [[] for _ in range(self.datalen)]
-        
         for ind in range(self.datalen):
-            self.divData[ind%self.procCount].append(data[ind])        
+            self.divData[ind%self.processor_count].append(data[ind])
+                
         pass
     
     
     
     def proc_data(self, func):
-        pool = Po(4)
-        multiple_results = [pool.apply_async(func, (i,)).start() for i in range(4)]
-        #print [res.get(timeout=None) for res in multiple_results]
+        
+        po = pool(self.processor_count)#mp.cpu_count()
+        multiple_results = [po.apply_async(func, (self.divData[i],self.resData[i])) for i in range(self.processor_count)]
+        #[res.get(timeout=None) for res in multiple_results]
+        for res in multiple_results:
+            res.get(timeout=None)
+        
+        #p = pro(target=func, args=(self.divData[0], self.resultData[0]))
+        #p.start()
+        #p.join()
         
         pass
         
     
-    def conquer_data(self):
+    def conquer_data(self, callback):
         
+        for ind in range(self.datalen):
+            for key, value in enumerate(self.resData[ind%self.processor_count]):
+                index = key*self.processor_count + ind%self.processor_count
+                #print index
+                self.outputData[index] = value
+            pass
         
+        callback(self.outputData)
         
         pass
 
 
 test = ['0','1','2','3','4','5','6','7','8','9']
+test1 = [[1,2,3,4],[11,12,13,14],[21,22,23,24],[31,32,33,34],[41,42,43,44],[51,52,53,54]]
 
 
+def hello(data):
+    for rows in data:
+        print rows
 
 
 class main():
     def __init__(self):
-        proc = BigDataParser()
-        proc.import_data(test)
+        proc = DataParser()
+        proc.import_data(test1)
         proc.divide_data()
-        proc.proc_data(f)
+        proc.proc_data(add)
+        proc.conquer_data(callback=hello)
         
         
 if __name__ == '__main__':

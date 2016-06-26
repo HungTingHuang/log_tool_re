@@ -180,6 +180,7 @@ class GridDataPage(wx.Panel):
                                    self.mPage.m_data,
                                    len(self.mPage.m_data), 
                                    len(self.mPage.m_data[0]))
+        #self.mGrid.Refresh()
         
         gridSizer.Add( self.mGrid, 1, wx.EXPAND, 5 )
         
@@ -368,6 +369,10 @@ class HugeTableGrid(wx.grid.Grid):
     def Update(self, *args, **kwargs):
         return wx.grid.Grid.Update(self, *args, **kwargs)
     '''
+    
+    def Refresh(self):
+        print 'refresh test'
+    
     def OnUpdate(self, title, data, rows, cols):
         self.table.Clear()
         self.table = model.HugeTable(title, data, rows, cols)

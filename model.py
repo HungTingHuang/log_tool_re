@@ -8,9 +8,11 @@ import wx.grid as gridlib
 #from lib2to3.tests.support import proj_dir
 import scanf as scanner
 import view as View
-import threading as Thd
+import threading
 import Queue as Que
 import multiprocessing as mp
+from StdSuites.Table_Suite import rows
+from CodeWarrior.CodeWarrior_suite import target
 #import xlrd
 
 #import xlsgrid
@@ -431,6 +433,8 @@ class LogInfo():
                     MPERR=%d;'
         return msg_pattern
         pass
+   
+
     
 class HugeTable(gridlib.PyGridTableBase):
     
@@ -443,6 +447,16 @@ class HugeTable(gridlib.PyGridTableBase):
         
         #remve first row
         self.data = self.data_souce[1:]
+        
+        '''
+        self.isOk = False
+        
+        th = threading.Thread(target = self.RefreshData, args=(data, self.isOk))
+        th.start()
+        #'''
+        
+        
+        
         self.row_count = self.row_count_source-1
         
         
@@ -455,7 +469,21 @@ class HugeTable(gridlib.PyGridTableBase):
         self.ReadyOnly.SetReadOnly(True)
         
         pass
+    '''
+    def RefreshData(self, data, isOk):
+        
+        print 'test'
+        
+        for index, row in enumerate(data[1:]):
+            #self.queue.put_nowait(row)
+            self.data[index] = row
+            print index
+        
+        isOk = True
+        
+    #'''
     def UpdateData(self, title, data, rows, cols):
+        
         self.title = title
         self.data = data
         
@@ -489,15 +517,17 @@ class HugeTable(gridlib.PyGridTableBase):
         return False
     
     def GetValue(self, row, col):
-        
+         
+            
         
         if col >= len(self.data[row]) or row > self.row_count:
             return ''
         else:
             return self.data[row][col]
             pass
-    
+        
     def SetValue(self, row, col, value):
+        
         self.data.write('SetValue(%d, %d, "%s") ignored.\n' % (row, col, value))
 ''' 
 class ParseWorker():
@@ -1442,7 +1472,4 @@ class Model():
     
     
 
-        #self, sql_name, col_limit, 
-   
-
-     
+        
