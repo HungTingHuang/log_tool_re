@@ -20,6 +20,9 @@ from collections import OrderedDict
 import threading as Thd
 
 
+
+
+
 class GridDataPage(wx.Panel):
     def __init__(self, parent, page_name, filename, cmd, grid_row_limit, isParsing, timezone,  args, args_index):
          
@@ -1429,13 +1432,10 @@ class Controller:
 
 
 
-
-
-
-
-
+import multiprocessing
 
 if __name__ == '__main__':
+    multiprocessing.freeze_support()
     app = wx.App()
     ctrl = Controller(None)
     app.MainLoop()

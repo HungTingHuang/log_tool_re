@@ -9,10 +9,11 @@ import wx.grid as gridlib
 import scanf as scanner
 import view as View
 import threading
-import Queue as Que
+#import Queue as Que
 import multiprocessing as mp
-from StdSuites.Table_Suite import rows
-from CodeWarrior.CodeWarrior_suite import target
+from multiprocessing import Process as pro, Queue as que, Pool as pool, Manager
+import os
+
 #import xlrd
 
 #import xlsgrid
@@ -20,7 +21,21 @@ from CodeWarrior.CodeWarrior_suite import target
 
 #global variables
 #mp_message = OrderedDict()
-callback_data = None
+global_list = []
+
+import copy_reg
+import types
+
+def _pickle_method(m):
+    if m.im_self is None:
+        return getattr, (m.im_class, m.im_func.func_name)
+    else:
+        return getattr, (m.im_self, m.im_func.func_name)
+
+copy_reg.pickle(types.MethodType, _pickle_method)
+
+
+
 
 class LogInfo():
     def __init__(self):
@@ -434,6 +449,83 @@ class LogInfo():
         return msg_pattern
         pass
    
+
+class MultiWorker():
+
+    def __init__(self):
+        self.data = None
+        self.datalen = 0
+        self.processor_count = 4#mp.cpu_count()
+        
+        self.divData = []
+        self.resData = []
+        self.outputData = [] 
+        self.append = []
+        self.title = []
+        
+    def import_data(self, data):
+        self.data = data
+        self.datalen = len(self.data)
+        
+        self.divData = [[] for _ in range(self.processor_count)]
+        
+        self.resData = [mp.Manager().list() for _ in range(self.processor_count)]
+        self.outputData = [[] for _ in range(self.datalen+1)]
+        
+        #self.title = title
+        #self.outputData = []
+        
+    def divide_data(self):
+        print 'divide start'
+        start_time = time.time()
+        data = self.data
+        for ind in range(self.datalen):
+            self.divData[ind%self.processor_count].append(data[ind])
+        over_time = time.time()
+        print over_time - start_time
+        print 'divide over'
+        pass
+    
+    
+    
+    def proc_data(self, func, que):
+        start_time = time.time()
+        print 'proc start'
+        po = pool(self.processor_count)#mp.cpu_count()
+        multiple_results = [po.apply_async(func, (self.divData[i],self.resData[i], que)) for i in range(self.processor_count)]
+        
+        #[res.get(timeout=None) for res in multiple_results]
+        for res in multiple_results:
+            res.get(timeout=None)
+        over_time = time.time()
+        print over_time - start_time
+        print 'proc over'
+        pass
+        
+    
+    def conquer_data(self, callback, title):
+        print 'conquer start' 
+        start_time = time.time()
+        ind = 0
+        temp = self.outputData[1:]
+        for key in range(self.processor_count):
+            for index, value in enumerate(self.resData[key]):                    
+                #print key+ index*self.processor_count
+                temp[key+ index*self.processor_count] = value
+       
+        
+        over_time = time.time()
+        self.outputData[0] = title
+        self.outputData[1:] = temp
+        
+        print over_time - start_time
+        print 'conquer over'
+       
+        #callback(self.outputData)
+        return self.outputData
+        pass
+
+
 
     
 class HugeTable(gridlib.PyGridTableBase):
@@ -1077,7 +1169,9 @@ class Model():
         self.parse = LogParse()
         self.IsParsing = True
         self.timezone = 0
-        
+        manager = Manager()
+        self.ComBetweenProcess = manager.Queue()
+        self.result_title = []
         
         self.filename = filename
         if self.filename == '':
@@ -1149,59 +1243,14 @@ class Model():
             
             #print 'get raw data'
             View.g_progress.Pulse()
-            data = self.SetDataToGrid(raw_data, temp)
+            data = self.SetMultiDataToGrid(raw_data, temp)
             
             #print 'parsing data'
             #global callback_data
             #callback_data = data
             return data
         pass
-    '''
-    def GetRowRangeData(self, filename, limit, offset):
-        
-        if not filename:
-            return
-        else:
-            log = LogParse(filename)
-            cmd = "SELECT * FROM %s LIMIT %s OFFSET %s"%(log.tableName, limit, offset)
-           
-            raw_data = self.sqlite.execute_command(filename, cmd)
-            
-            data = self.SetDataToGrid(filename, raw_data)
-            return data
-        pass
-    ''' 
-    '''
-    def GetTimeRangeData(self, filename, hl, ll):
-        if not filename:
-            return
-        log = LogParse(filename)
-        hl = str(hl)
-        hl = hl[::-1].replace(hl[len(hl)-1][::-1], '%'[::-1], 1)[::-1]
-        
-        ll = str(ll)
-        ll = ll[::-1].replace(ll[len(ll)-1][::-1], '%'[::-1], 1)[::-1]
-        
-        cmd_hl = "SELECT * FROM %s WHERE ts LIKE '%s' ORDER BY ts DESC LIMIT 1"%(log.tableName, hl)
-        cmd_ll = "SELECT * FROM %s WHERE ts LIKE '%s' ORDER BY ts ASC LIMIT 1"%(log.tableName, ll)
-        
-        data_hl = self.sqlite.execute_command(filename, cmd_hl)
-        data_ll = self.sqlite.execute_command(filename, cmd_ll)
-        
-
-        if len(data_hl) == 1 and len(data_ll) == 1:
-            ts_hl = self.sqlite.execute_command(filename, cmd_hl)[0][0]
-            ts_ll = self.sqlite.execute_command(filename, cmd_ll)[0][0]
-
-            cmd_range = "SELECT * FROM %s WHERE ts BETWEEN %s AND %s ORDER BY ts ASC"%(log.tableName, ts_ll, ts_hl)
-            raw_data = self.sqlite.execute_command(filename, cmd_range)
-            data = self.SetDataToGrid(filename, raw_data)    
-            return data
-        else:
-            return None
-            pass
-        pass    
-    '''
+    
 
     def SetDataToGrid(self, raw_data, cmd):
         
@@ -1307,7 +1356,6 @@ class Model():
         
         return data
         pass
-'''    
     def SetDataToQuene(self, raw_data, cmd, quene):
         
         mQue = quene
@@ -1387,88 +1435,126 @@ class Model():
                 mQue.put(data[row_count], True)
             row_count += 1
         pass
-
-    def SetMultiDataToQuene(self, raw_data, cmd):
+    '''
+    def hello(self, data):
+        print '========================output========================'
+        #print data[8111]
         
-        resQue = Que.Queue(1)
+        for set in data:
+            #print set
+            
+            for row in set:
+                print row
+            
         
+    '''
+    def SetMultiDataToGrid(self, raw_data, cmd):
+        #direct error
         if not len(raw_data) >= 1:
-            print 'no data'
+            print 'error'
             return
         else:
             pass
+       
         
         
-        #memory initialize
-        first_append_title = True
-        data = [[] for _ in range(len(raw_data)+1)]
-        #
-        title = self.parse.find_table_col_name(cmd)
-        
-        
+        title = self.parse.find_table_col_name(cmd)#get title
         mp_message_t = ''
+        
+        
         for item in title:
-            data[0].append(item)
+            self.result_title.append(item)
         
-        iter = data[0].index('ts')
-        data[0][iter] = 'timestamp'
+        iter = self.result_title.index('ts')
+        self.result_title[iter] = 'timestamp'
         iter +=1
-        data[0].insert(iter, 'time')
+        #data[0].insert(iter, 'day')
+        #iter +=1
+        self.result_title.insert(iter, 'time')
         iter +=1
-        data[0].insert(iter, 'ms')
+        self.result_title.insert(iter, 'ms')
         
-        if 'msg' in data[0]:
-            data[0][data[0].index('msg')] = 'mc_log'
+        #'''
+        if 'msg' in self.result_title:
+            self.result_title = [word.replace('msg', 'mc_log') for word in self.result_title]
+        #'''
+        #pickle(MethodType, _pickle_method, _unpickle_method)
+        mw = MultiWorker()
+        mw.import_data(raw_data)
+        mw.divide_data()
+        self.ComBetweenProcess.put(self.result_title)
+        mw.proc_data(self.mDataRowProc, self.ComBetweenProcess)
         
+        _title = []
+        while not self.ComBetweenProcess.empty():
+            print 'get value'
+            _title = self.ComBetweenProcess.get(True, 5)
+        
+        data = mw.conquer_data(callback=None, title=_title)
+        
+        
+        
+        return data
+        
+        
+       
+        
+        pass
+
+    def mDataRowProc(self, raw_data, result_data, queue):
+        
+        first_append_title = True
+        result_title = []
+        haveValue = bool(not queue.empty())
+        if haveValue:
+            result_title = queue.get_nowait()
+        
+        #print result_title
+        #set timezone
+        self.parse.timezone = self.timezone
         
         mp_message = OrderedDict()
         row_count = 1
+        output_row = [[] for _ in range(len(raw_data))]
+       
         for index, row in enumerate(raw_data):
             
             for ind, value in enumerate(row):
-                
                 if ind == 0:
-                    data[row_count].append(row[ind])
-                   
-                    data[row_count].append(self.parse.timestamp_convert(row[ind])['time'])
-                    data[row_count].append(self.parse.timestamp_convert(row[ind])['ms'])
+                    output_row[index].append(row[ind])
+                    #data[row_count].append(self.log.timestamp_convert(row[0])['day'])
+                    output_row[index].append(self.parse.timestamp_convert(row[ind])['time'])
+                    output_row[index].append(self.parse.timestamp_convert(row[ind])['ms'])
                 elif ind == 5:
-                    if  self.parse.find_mp_message(row[ind]) and self.IsParsing:
-                        
+                    if self.parse.find_mp_message(row[ind]) and self.IsParsing:
                         mp_message_t = self.parse.mp_message_standardize(row[ind])
+                       
+                        mp_message = self.parse.mp_message_parsing(mp_message_t)#return OrderedDict()
                         
-                        self.worker.AddJobs(
-                                            self.parse.mp_message_parse_to_quene(
-                                                                                 mp_message_t, 
-                                                                                 resQue,
-                                                                                 self.worker.Done))
-                        mp_message = resQue.get(True, None)
                         
-                        if first_append_title:
+                        if first_append_title and not haveValue:
                             for keys in mp_message:
-                                data[0].append(keys)
+                                result_title.append(keys)
                                 first_append_title = False
-                                pass
                             
-                        data[row_count].append('')
-                        
+                            queue.put_nowait(result_title)
+                        output_row[index].append('')
                         for key in mp_message:
-                            data[row_count].append(mp_message[key])
-    
+                            output_row[index].append(mp_message[key])
                         pass
                     else:
-                        data[row_count].append(row[ind])
+                        if not row[ind] == None:
+                            output_row[index].append(row[ind])
                         pass
-                    
                 else:
-                    data[row_count].append(row[ind])
+                    if not row[ind] == None:
+                        output_row[index].append(row[ind])
                     pass
-           
             row_count += 1
-        return data
+            result_data.append(output_row[index])
+        #print result_title    
+       
         pass
-'''
-   
     
     
 

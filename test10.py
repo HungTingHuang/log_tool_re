@@ -98,6 +98,7 @@ total_time = float(end_time) - float(start_time)
 #get rawdata
 '''
 import multiprocessing as mp
+
 from multiprocessing import Process as pro, Queue as que, Pool as pool, Manager
 import time,os,sys,math
 
@@ -113,11 +114,11 @@ def f(name):
 
 def add(data, res):
     #res.append(10)
-    
+    print os.getpid()
     for index, rows in enumerate(data):
         temp = []
         for value in rows:
-            temp.append(value + 100) 
+            temp.append(value+100) 
         res.append(temp)
     
     
@@ -159,8 +160,8 @@ class DataParser():
     
     
     
-    def proc_data(self, func):
-        
+    def proc_data(self, func, tt):
+        print tt
         po = pool(self.processor_count)#mp.cpu_count()
         multiple_results = [po.apply_async(func, (self.divData[i],self.resData[i])) for i in range(self.processor_count)]
         #[res.get(timeout=None) for res in multiple_results]
@@ -192,9 +193,7 @@ test = ['0','1','2','3','4','5','6','7','8','9']
 test1 = [[1,2,3,4],[11,12,13,14],[21,22,23,24],[31,32,33,34],[41,42,43,44],[51,52,53,54]]
 
 
-def hello(data):
-    for rows in data:
-        print rows
+
 
 
 class main():
@@ -202,7 +201,7 @@ class main():
         proc = DataParser()
         proc.import_data(test1)
         proc.divide_data()
-        proc.proc_data(add)
+        proc.proc_data(add, 'qqqqq')
         proc.conquer_data(callback=hello)
         
         
