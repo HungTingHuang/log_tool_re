@@ -964,6 +964,7 @@ class LogParse():
                 return False
         pass
     #'''
+    #@staticmethod
     def mp_message_parsing(self, mp_message_t):
         if isinstance(mp_message_t, str):
             pass
@@ -1500,7 +1501,8 @@ class Model():
        
         
         pass
-
+    
+    
     def mDataRowProc(self, raw_data, result_data, queue):
         
         first_append_title = True
