@@ -561,7 +561,7 @@ class Controller:
         
         #auimanager
         self.m_view.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnANBPageChanged, self.m_view.m_auimanager)
-        self.m_view.Bind(wx.aui.EVT_AUINOTEBOOK_BUTTON, self.OnANBPageMaxing, self.m_view.m_auimanager)
+        #self.m_view.Bind(wx.aui.EVT_, self.OnANBPageMaxing, self.m_view.m_auimanager)
         
         #treectrl
         self.m_view.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged, self.m_view.m_treectrl)
