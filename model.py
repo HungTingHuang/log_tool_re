@@ -455,15 +455,19 @@ class MultiWorker():
     def __init__(self):
         self.data = None
         self.datalen = 0
-        self.processor_count = 4#mp.cpu_count()
+        self.processor_count = mp.cpu_count()
         
         self.divData = []
         self.resData = []
         self.outputData = [] 
         self.append = []
         self.title = []
+        self.lock = mp.Lock()
         
-    def import_data(self, data):
+        manager = Manager()
+        self.queue = manager.Queue()
+        
+    def import_data(self, data, title):
         self.data = data
         self.datalen = len(self.data)
         
@@ -471,7 +475,7 @@ class MultiWorker():
         
         self.resData = [mp.Manager().list() for _ in range(self.processor_count)]
         self.outputData = [[] for _ in range(self.datalen+1)]
-        
+        self.title = title
         #self.title = title
         #self.outputData = []
         
@@ -488,13 +492,13 @@ class MultiWorker():
     
     
     
-    def proc_data(self, func, que):
+    def proc_data(self, func):
         start_time = time.time()
         print 'proc start'
         po = pool(self.processor_count)#mp.cpu_count()
-        multiple_results = [po.apply_async(func, (self.divData[i],self.resData[i], que)) for i in range(self.processor_count)]
+        multiple_results = [po.apply_async(func, (self.divData[i],self.resData[i], self.queue)) for i in range(self.processor_count)]
         
-        #[res.get(timeout=None) for res in multiple_results]
+        
         for res in multiple_results:
             res.get(timeout=None)
         over_time = time.time()
@@ -503,11 +507,12 @@ class MultiWorker():
         pass
         
     
-    def conquer_data(self, callback, title):
+    def conquer_data(self, callback):
         print 'conquer start' 
         start_time = time.time()
         ind = 0
         temp = self.outputData[1:]
+        
         for key in range(self.processor_count):
             for index, value in enumerate(self.resData[key]):                    
                 #print key+ index*self.processor_count
@@ -515,7 +520,12 @@ class MultiWorker():
        
         
         over_time = time.time()
-        self.outputData[0] = title
+        
+        title_sub = []
+        if not self.queue.empty():
+            title_sub = self.queue.get()
+        
+        self.outputData[0] = self.title + title_sub
         self.outputData[1:] = temp
         
         print over_time - start_time
@@ -1170,9 +1180,8 @@ class Model():
         self.parse = LogParse()
         self.IsParsing = True
         self.timezone = 0
-        manager = Manager()
-        self.ComBetweenProcess = manager.Queue()
-        self.result_title = []
+        self.IsMultiProcessing = True
+        
         
         self.filename = filename
         if self.filename == '':
@@ -1189,7 +1198,10 @@ class Model():
     def SetIsParsing(self, IsParsing):
         self.IsParsing = bool(IsParsing)
         pass
-   
+    def SetIsMultiProcessing(self, IsMultiProcessing):
+        self.IsMultiProcessing =IsMultiProcessing
+        pass
+    
     def GetFullDataCmd(self):
         if not self.filename:
             return
@@ -1229,26 +1241,28 @@ class Model():
     def GetRowRangeData(self, cmd, limit, offset):
         range = " LIMIT %s OFFSET %s"%(limit, offset)
         order = ' ORDER BY ts ASC'
-        temp = str(cmd)
+        cmd_t = str(cmd)
         if not self.filename:
             return
         else:
-            
-            
             cmd = cmd + order + range
             
             #print 'start'
             raw_data = self.parse.sqlite.execute_command(self.filename, cmd)            
-            #get Data
             
-            
-            #print 'get raw data'
             View.g_progress.Pulse()
-            data = self.SetMultiDataToGrid(raw_data, temp)
+            print 'start'
+            start_time = time.time()
             
-            #print 'parsing data'
-            #global callback_data
-            #callback_data = data
+            if self.IsMultiProcessing:
+                data = self.SetMultiDataToGrid(raw_data, cmd_t)
+            else:
+                data = self.SetDataToGrid(raw_data, cmd_t)
+            
+            over_time = time.time()
+            print over_time - start_time
+            print 'over'
+            
             return data
         pass
     
@@ -1264,96 +1278,14 @@ class Model():
         
         
         
-        first_append_title = True
-        data = [[] for _ in range(len(raw_data)+1)]
-        title = self.parse.find_table_col_name(cmd)
+       
         
+        data = []
+        #data = []
+        #data[0] = self.mGetTitle(cmd) 
+        data.append(self.mGetTitle(cmd))
+        self.mDataRowProc(raw_data, data, queue=None)
         
-        mp_message_t = ''
-        for item in title:
-            data[0].append(item)
-        
-        iter = data[0].index('ts')
-        data[0][iter] = 'timestamp'
-        iter +=1
-        #data[0].insert(iter, 'day')
-        #iter +=1
-        data[0].insert(iter, 'time')
-        iter +=1
-        data[0].insert(iter, 'ms')
-        
-        if 'msg' in data[0]:
-            data[0][data[0].index('msg')] = 'mc_log'
-        #print 'title processed'
-        
-        #set timezone
-        self.parse.timezone = self.timezone
-        
-        mp_message = OrderedDict()
-        row_count = 1
-        for index, row in enumerate(raw_data):
-            for ind, value in enumerate(row):
-                
-                if ind == 0:
-                    data[row_count].append(row[ind])
-                    #data[row_count].append(self.log.timestamp_convert(row[0])['day'])
-                    data[row_count].append(self.parse.timestamp_convert(row[ind])['time'])
-                    data[row_count].append(self.parse.timestamp_convert(row[ind])['ms'])
-                elif ind == 5:
-                    if  self.parse.find_mp_message(row[ind]) and self.IsParsing:
-                        
-                        mp_message_t = self.parse.mp_message_standardize(row[ind])
-                        #print str(time.time()) + 'parsing start' 
-                        #mp_message = self.parse.mp_message_parse(mp_message)#return OrderedDict()
-                        
-                        mp_message = self.parse.mp_message_parsing(mp_message_t)#return OrderedDict()
-                        
-                        #Thd.Thread(target=self.parse.mp_message_parsing, args=(mp_message_t,), name='test').start()
-                        #print mp_message
-                        #print str(time.time()) + 'parsing end'
-                        
-                        if first_append_title:
-                            for keys in mp_message:
-                                data[0].append(keys)
-                                first_append_title = False
-                                pass
-                        data[row_count].append('')
-                        #print str(time.time()) + 'set value start'
-                        for key in mp_message:
-                            data[row_count].append(mp_message[key])
-                        #print str(time.time()) + 'set value end'
-                    #else:
-                        #pass
-                        pass
-                    else:
-                        
-                        if not row[ind] == None:
-                            data[row_count].append(row[ind])
-                        '''
-                        if not row(ind)[0] == 0:
-                            data[row_count].append(row[ind])
-                        #'''
-                        pass
-                    
-                else:
-                    
-                    if not row[ind] == None:
-                        data[row_count].append(row[ind])
-                    '''
-                    if not row(ind)[0] == 0:
-                        data[row_count].append(row[ind])
-                    #'''
-                    pass
-                
-                    
-                        
-                #data[row_count].append(row[ind])
-            row_count += 1
-            
-            
-            
-      
-        #print 'write to array'
         
         return data
         pass
@@ -1449,7 +1381,9 @@ class Model():
             
         
     '''
-    def SetMultiDataToGrid(self, raw_data, cmd):
+    
+   
+    def SetMultiDataToGrid(self, raw_data, cmd):#multiprocess
         #direct error
         if not len(raw_data) >= 1:
             print 'error'
@@ -1458,47 +1392,17 @@ class Model():
             pass
        
         
-        
-        title = self.parse.find_table_col_name(cmd)#get title
-        mp_message_t = ''
-        
-        
-        for item in title:
-            self.result_title.append(item)
-        
-        iter = self.result_title.index('ts')
-        self.result_title[iter] = 'timestamp'
-        iter +=1
-        #data[0].insert(iter, 'day')
-        #iter +=1
-        self.result_title.insert(iter, 'time')
-        iter +=1
-        self.result_title.insert(iter, 'ms')
-        
-        #'''
-        if 'msg' in self.result_title:
-            self.result_title = [word.replace('msg', 'mc_log') for word in self.result_title]
-        #'''
-        #pickle(MethodType, _pickle_method, _unpickle_method)
+        titlt_t = self.mGetTitle(cmd)
+       
         mw = MultiWorker()
-        mw.import_data(raw_data)
+        mw.import_data(raw_data, titlt_t)
         mw.divide_data()
-        self.ComBetweenProcess.put(self.result_title)
-        mw.proc_data(self.mDataRowProc, self.ComBetweenProcess)
         
-        _title = []
-        while not self.ComBetweenProcess.empty():
-            print 'get value'
-            _title = self.ComBetweenProcess.get(True, 5)
+        mw.proc_data(self.mDataRowProc)
         
-        data = mw.conquer_data(callback=None, title=_title)
-        
-        
+        data = mw.conquer_data(callback=None)
         
         return data
-        
-        
-       
         
         pass
     
@@ -1507,11 +1411,8 @@ class Model():
         
         first_append_title = True
         result_title = []
-        haveValue = bool(not queue.empty())
-        if haveValue:
-            result_title = queue.get_nowait()
         
-        #print result_title
+            
         #set timezone
         self.parse.timezone = self.timezone
         
@@ -1529,17 +1430,17 @@ class Model():
                     output_row[index].append(self.parse.timestamp_convert(row[ind])['ms'])
                 elif ind == 5:
                     if self.parse.find_mp_message(row[ind]) and self.IsParsing:
-                        mp_message_t = self.parse.mp_message_standardize(row[ind])
-                       
+                        mp_message_t = self.parse.mp_message_standardize(row[ind])       
                         mp_message = self.parse.mp_message_parsing(mp_message_t)#return OrderedDict()
-                        
-                        
-                        if first_append_title and not haveValue:
+                        if first_append_title:
                             for keys in mp_message:
                                 result_title.append(keys)
                                 first_append_title = False
-                            
-                            queue.put_nowait(result_title)
+                            if queue and queue.empty():
+                                queue.put(result_title)
+                            elif not queue:
+                                result_data[0] = result_data[0]+result_title
+                                
                         output_row[index].append('')
                         for key in mp_message:
                             output_row[index].append(mp_message[key])
@@ -1554,10 +1455,30 @@ class Model():
                     pass
             row_count += 1
             result_data.append(output_row[index])
-        #print result_title    
-       
+            
         pass
     
     
 
+    def mGetTitle(self, cmd):
+        title = self.parse.find_table_col_name(cmd)#get title
+        result_title = []
+        
+        for item in title:
+            result_title.append(item)
+        
+        iter = result_title.index('ts')
+        result_title[iter] = 'timestamp'
+        iter +=1
+        #data[0].insert(iter, 'day')
+        #iter +=1
+        result_title.insert(iter, 'time')
+        iter +=1
+        result_title.insert(iter, 'ms')
+        
+        #'''
+        if 'msg' in result_title:
+            result_title = [word.replace('msg', 'mc_log') for word in result_title]
+        
+        return result_title
         

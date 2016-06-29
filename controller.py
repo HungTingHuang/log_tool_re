@@ -24,7 +24,7 @@ import threading as Thd
 
 
 class GridDataPage(wx.Panel):
-    def __init__(self, parent, page_name, filename, cmd, grid_row_limit, isParsing, timezone,  args, args_index):
+    def __init__(self, parent, page_name, filename, cmd, grid_row_limit, isMp, isParsing, timezone,  args, args_index):
          
         ##Panel Setting
         self.mPage = wx.Panel(parent, 
@@ -69,6 +69,7 @@ class GridDataPage(wx.Panel):
         self.m_model = Model(filename)
         self.m_model.SetIsParsing(self.IsParsing)
         self.m_model.SetTimeZone(timezone)
+        self.m_model.SetIsMultiProcessing(isMp)
         self.m_progress = args
         
         
@@ -560,7 +561,7 @@ class Controller:
         
         #auimanager
         self.m_view.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnANBPageChanged, self.m_view.m_auimanager)
-        
+        self.m_view.Bind(wx.aui.EVT_AUINOTEBOOK_BUTTON, self.OnANBPageMaxing, self.m_view.m_auimanager)
         
         #treectrl
         self.m_view.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged, self.m_view.m_treectrl)
@@ -636,6 +637,12 @@ class Controller:
     
     
     #evt dir picker
+    def OnANBPageMaxing(self, evt):
+        print 'hello world'
+        pass
+    
+    
+    
     def OnDirSelected(self, evt):
         tree = self.m_view.m_treectrl
         tree.DeleteAllItems()
@@ -702,11 +709,13 @@ class Controller:
                 self.m_view.m_statusBar.SetStatusText(self.show_current_file, 0)
                 
                 isParsing = False#_model.SetIsParsing(0)#mp_message don`t parse
+                isMP = False
                 GridDataPage(self.m_view.m_auimanager, 
                              page_name, 
                              itemPath,
                              _model.GetFullDataCmd(),
                              self.grid_max_row_number,
+                             isMP,
                              isParsing,
                              self.m_timezone,
                              0,
@@ -970,6 +979,11 @@ class Controller:
             page_name = "%s: %s"%(self.current_select_project_name, 
                                   self.current_select_file_name)
             isParsing = True
+            isMP = True
+            
+            if 'format' in self.tablename:
+                isMP = False
+
             '''
             Thd.Thread(target=GridDataPage, args=(self.m_view.m_auimanager, 
                                                   page_name, 
@@ -986,6 +1000,7 @@ class Controller:
                              self.current_select_file_path, 
                              self.cmd, 
                              self.grid_max_row_number,
+                             isMP,
                              isParsing,
                              self.m_timezone,
                              0,
@@ -1397,7 +1412,7 @@ class Controller:
     def OnKeyDown(self, e):
         key = e.GetKeyCode()
         
-        if key == wx.WXK_ESCAPE:
+        if key == wx.WXK_F12:
         
             print 444
             pass 
