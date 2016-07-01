@@ -2,7 +2,7 @@
 import wx
 import wx.grid
 import wx.aui
-#import wx.lib.agw.aui as wx_aui
+import wx.lib.agw.aui
 import os
 import view
 import model
@@ -205,7 +205,7 @@ class GridDataPage(wx.Panel):
     
     #callback export excel
     def OnExportExcel(self, evt):
-        
+        view.g_progress.SetValue(0)
         projectName = self.mPage.page_name.partition('.d')[0] 
         #exportFileName = projectName.replace(': ', '_') + '.xlsx'
         exportFileName = projectName.replace(': ', '_') + '.csv'
@@ -223,23 +223,22 @@ class GridDataPage(wx.Panel):
         doc = open(exportFileName, 'w')
         
         data_total_rows = self.m_model.parse.find_total_row_number( self.mPage.cmd)
-        
+        view.g_progress.SetValue(10)
         
         #self.m_progress.SetValue(int(20))
-        data = self.m_model.GetRowRangeData(self.mPage.cmd,
-                                            data_total_rows, 
-                                            0)
+        
         #self.m_progress.SetValue(int(70))
         
-        for row in data:
+        for row in self.mPage.m_data:
             for value in row:
                 doc.write(str(value))
                 doc.write(str(','))
             doc.write(str('\n'))
-        
+        view.g_progress.SetValue(80)
         #self.m_progress.SetValue(int(90))
         doc.close()
-        
+        view.g_progress.SetValue(100)
+        View.Info("Process has Done!")
         
         
         '''
@@ -407,6 +406,10 @@ class HugeTableGrid(wx.grid.Grid):
         # If Ctrl+V is pressed...
         if event.ControlDown() and event.GetKeyCode() == 86:
             self.paste('clip')
+        # If Ctrl+F is pressed
+        if event.ControlDown() and event.GetKeyCode() == 70:
+            self.search()
+        
         # If Ctrl+Z is pressed...
         if event.ControlDown() and event.GetKeyCode() == 90:
             if self.data4undo[2] != '':
@@ -419,6 +422,12 @@ class HugeTableGrid(wx.grid.Grid):
         if event.GetKeyCode():
             event.Skip()
             return
+        
+    def search(self):
+        print 'hello'
+        print View.Question('hello')
+        pass
+    
     def copy(self):
         # Number of rows and cols
         #print self.GetSelectionBlockBottomRight()
@@ -526,13 +535,10 @@ class HugeTableGrid(wx.grid.Grid):
         #'''
         pass
 
-'''
-class HugeAuiNoteBook(wx.Panel):
-    def __init__(self, parent, ID_ANY, DefaultPosition, DefaultSize, 0, AUI_NB_DEFAULT_STYLE, "AuiNotebook"):
-        wx.Panel(self, parent, ID_ANY, DefaultPosition, DefaultSize, 0, AUI_NB_DEFAULT_STYLE, "AuiNotebook")
-        pass
-    pass
-'''
+
+#ctr global paremeter
+
+
 class Controller:
     def __init__(self, app):
         self.m_view = view.View(None)
@@ -559,8 +565,12 @@ class Controller:
         
         
         
-        #auimanager
-        self.m_view.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnANBPageChanged, self.m_view.m_auimanager)
+        #auimanager EVT_AUINOTEBOOK_TAB_RIGHT_DOWN(winid, fn):
+        self.m_view.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnANBPageChanged, self.m_view.m_auinotebook)
+        
+        
+        #self.m_view.Bind(wx.lib.agw.aui.EVT_AUINOTEBOOK_TAB_DCLICK , self.OnANBPageMaxing, self.m_view.m_auimanager_t)
+       
         #self.m_view.Bind(wx.aui.EVT_, self.OnANBPageMaxing, self.m_view.m_auimanager)
         
         #treectrl
@@ -578,6 +588,8 @@ class Controller:
         self.src_fifter = ''
         self.state_fifter = ''
         self.level_fifter = ''
+        self.proj_name = ''
+        self.m_view.Bind(wx.EVT_CHOICE, self.OnProjChoice, self.m_view.m_np1_1f_proj)
         self.m_view.Bind(wx.EVT_CHOICE, self.OnTableChoice, self.m_view.m_np1_1f_table)
         self.m_view.Bind(wx.EVT_TEXT, self.OntcSrcChanged, self.m_view.m_np1_1f_tc_src)
         self.m_view.Bind(wx.EVT_TEXT, self.OntcStateChanged, self.m_view.m_np1_1f_tc_state)
@@ -627,7 +639,7 @@ class Controller:
       
     def OnANBPageChanged(self, evt):
         pageID = evt.GetSelection()
-        pageName = self.m_view.m_auimanager.GetPageText(pageID)
+        pageName = self.m_view.m_auinotebook.GetPageText(pageID)
         
         self.current_select_page = pageName
         self.m_view.m_statusBar.SetStatusText(self.current_select_page, 1)
@@ -640,7 +652,7 @@ class Controller:
     def OnANBPageMaxing(self, evt):
         print 'hello world'
         pass
-    
+   
     
     
     def OnDirSelected(self, evt):
@@ -702,7 +714,7 @@ class Controller:
                 #setting model
                 
                 
-                projName = _model.parse.curProj
+                projName = self.proj_name
                 self.current_select_project_name = projName
                 self.show_current_file = '%s: %s'%(projName, itemName)
                 page_name = '%s: %s [preview]'%(projName, itemName)
@@ -710,7 +722,7 @@ class Controller:
                 
                 isParsing = False#_model.SetIsParsing(0)#mp_message don`t parse
                 isMP = False
-                GridDataPage(self.m_view.m_auimanager, 
+                GridDataPage(self.m_view.m_auinotebook, 
                              page_name, 
                              itemPath,
                              _model.GetFullDataCmd(),
@@ -722,35 +734,7 @@ class Controller:
                              0)
                 
                 
-                '''
-                data_len = parse.find_total_row_number(itemPath)
-                row_limit = self.grid_max_row_number
-                page_number = 1
-                
-                
-                if data_len > row_limit:
-                    page_number = data_len/row_limit
-                    if not data_len%row_limit == 0:
-                        page_number += 1
-                    else:
-                        pass
-                else:
-                    pass 
-                
-                
-                offset = 0
-                for num in range(0, page_number):
-                    page_name_text =  page_name + '_#' + str(num)
-                    data = self.m_model.GetRowRangeData(itemPath, row_limit, offset)
-                    offset += (row_limit+1)
-                    
-                    if data and len(data) >1:
-                        self.mAddMultiGridPage(page_name, data[0], data)
-                        #self.mAddGridPage(page_name_text, data[0], data)
-                    else:
-                        pass
-                pass
-                '''
+             
         pass
     def OnItemExpanded(self, evt):
         pass     
@@ -775,7 +759,12 @@ class Controller:
             pass
         pass
     #evt notebook panel 01
-
+    
+        
+    def OnProjChoice(self, evt):
+        self.proj_name = evt.GetString()
+        model.project_name = self.proj_name
+        pass
     
     def OnTableChoice(self, evt):
         self.tablename = evt.GetString()
@@ -903,35 +892,7 @@ class Controller:
         hl = self.ts_hl
         
         
-        '''
-        _list =[src, state, lev ] 
         
-        base = text.partition(' WHERE ')[0]
-        
-        
-        fifter = ''
-        for value in _list:
-            if not value =='':
-                if not fifter =='':
-                    fifter += ' AND '
-                fifter += value
-        
-        
-        
-        
-        
-        if like:
-            if src or state or lev:
-                base = base + ' WHERE ' + '(' + fifter + ')' + ' AND ' + '(' + like + ')'
-            else:
-                base = base + ' WHERE ' + like
-        else:
-            if src or state or lev:
-                base = base + ' WHERE ' + fifter
-            else:
-                pass
-            
-        '''
        
         #_list =[src, state, lev, like, time_range] 
         _list =[src, state, lev, like, ll, hl] 
@@ -985,7 +946,7 @@ class Controller:
                 isMP = False
 
             '''
-            Thd.Thread(target=GridDataPage, args=(self.m_view.m_auimanager, 
+            Thd.Thread(target=GridDataPage, args=(self.m_view.m_auinotebook, 
                                                   page_name, 
                                                   self.current_select_file_path, 
                                                   self.cmd, 
@@ -995,7 +956,7 @@ class Controller:
                                                   0)).start()
             '''
             #'''
-            GridDataPage(self.m_view.m_auimanager, 
+            GridDataPage(self.m_view.m_auinotebook, 
                              page_name, 
                              self.current_select_file_path, 
                              self.cmd, 
@@ -1190,7 +1151,7 @@ class Controller:
                 
                     self.mAddGridPage(page_name, data[0], data)
                 '''
-                GridDataPage(self.m_view.m_auimanager, 
+                GridDataPage(self.m_view.m_auinotebook, 
                              page_name, 
                              self.current_select_file_path, 
                              cmd, 
@@ -1290,7 +1251,7 @@ class Controller:
     def mAddGridPage(self, page_name, col_title, data):
        
         self.lock.acquire()
-        mParent = self.m_view.m_auimanager
+        mParent = self.m_view.m_auinotebook
         
         mPanel = wx.Panel(mParent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
         Panel_Sizer = wx.BoxSizer(wx.VERTICAL)
@@ -1321,14 +1282,14 @@ class Controller:
         Panel_Sizer.Add( mGrid, 1, wx.ALL|wx.EXPAND, 5 )
         mPanel.SetSizer(Panel_Sizer)
         mPanel.Layout()
-        self.m_view.m_auimanager.AddPage(mPanel, page_name, False)
+        self.m_view.m_auinotebook.AddPage(mPanel, page_name, False)
         self.lock.release()
        
         pass
     """
     """
     def mAddMultiGridPage(self, filename, page_name):
-        mParent = self.m_view.m_auimanager
+        mParent = self.m_view.m_auinotebook
         mPanel = wx.Panel(mParent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
         Panel_Sizer = wx.BoxSizer(wx.VERTICAL)
         
@@ -1403,7 +1364,7 @@ class Controller:
         grid_Sizer.Add( mGrid, 1, wx.EXPAND, 5 )
         mPanel.SetSizer(Panel_Sizer)
         mPanel.Layout()
-        self.m_view.m_auimanager.AddPage(mPanel, page_name, False)
+        self.m_view.m_auinotebook.AddPage(mPanel, page_name, False)
         pass
     """
     

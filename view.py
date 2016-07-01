@@ -3,7 +3,7 @@ import wx
 import wx.grid
 import wx.aui
 import wx.propgrid as pg
-#import wx.lib.agw.aui as wx_aui
+import wx.lib.agw.aui
 
 #import EnhancedStatusBar as statusBar
 
@@ -303,6 +303,27 @@ class View(wx.Frame):
         #hSizer_nb1_1f ==============================================================================================
         #hSizer_nb1_1f_src start
         hSizer_nb1_1f_table = wx.BoxSizer( wx.HORIZONTAL )
+        
+        m_choice_proj = ['Project Name', 
+                         'DEV_iRide',
+                         'FujiQ_iRide',
+                         'Zoo_Emmem',
+                         'SSM_AOT',
+                         'SSM_Odyssey',
+                         'SSM_Trex',
+                         'SSM_Balloon']
+        
+        c_nb1_1f_proj = wx.Choice( notebook.panel_01, 
+                                       wx.ID_ANY, 
+                                       wx.DefaultPosition, 
+                                       wx.DefaultSize, 
+                                       m_choice_proj, 0 )
+        
+        c_nb1_1f_proj.SetSelection(0)
+        
+        hSizer_nb1_1f_table.Add( c_nb1_1f_proj, 1, wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.LEFT, 5 )
+        
+        
         m_choice_table = ['Table Name']
         
         c_nb1_1f_table = wx.Choice( notebook.panel_01, 
@@ -594,65 +615,7 @@ class View(wx.Frame):
         
         
         
-        '''
-        
-        notebook.panel_01.fgSizer_2 = wx.FlexGridSizer( 0, 8, 0, 0 )
-        notebook.panel_01.fgSizer_2.SetFlexibleDirection( wx.BOTH )
-        notebook.panel_01.fgSizer_2.SetNonFlexibleGrowMode( wx.FLEX_GROWMODE_SPECIFIED )
-        
-        notebook.panel_01.checkBox = wx.CheckBox( notebook.panel_01, wx.ID_ANY, u"Check Me!", wx.DefaultPosition, wx.DefaultSize, 0 )
-        notebook.panel_01.checkBox.SetValue(False)
-        notebook.panel_01.fgSizer_2.Add( notebook.panel_01.checkBox, 0, wx.ALIGN_CENTER_VERTICAL, 5 )
-        
-        m_choice_hr = []
-        for hh in range(0, 24):
-            m_choice_hr.append('%s hr'%hh)
-        
-        m_choice_mm = []
-        for mm in range(0, 60):
-            m_choice_mm.append('%s min'%mm)
-        
-        notebook.panel_01.choice1 = wx.Choice( notebook.panel_01, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_hr, wx.NO_BORDER )
-        notebook.panel_01.choice1.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_MENU ) )
-        notebook.panel_01.choice1.SetSelection( 0 )
-        notebook.panel_01.fgSizer_2.Add( notebook.panel_01.choice1, 0, wx.ALIGN_CENTER_VERTICAL, 5 )
-        
-        
-        notebook.panel_01.choice2 = wx.Choice( notebook.panel_01, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_mm, wx.NO_BORDER )
-        notebook.panel_01.choice2.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_MENU ) )
-        notebook.panel_01.choice2.SetSelection( 0 )
-        notebook.panel_01.fgSizer_2.Add( notebook.panel_01.choice2, 0, wx.ALIGN_CENTER_VERTICAL, 5 )
-        
-        notebook.panel_01.fgSizer_2.AddSpacer( ( 15, 0), 0, 0, 5 )
-        
-        notebook.panel_01.staticText_1 = wx.StaticText( notebook.panel_01, wx.ID_ANY, u"to", wx.DefaultPosition, wx.DefaultSize, 0 )
-        notebook.panel_01.staticText_1.Wrap( -1 )
-        notebook.panel_01.staticText_1.Disable()
-        notebook.panel_01.fgSizer_2.Add( notebook.panel_01.staticText_1, 0, wx.ALL|wx.ALIGN_CENTER_VERTICAL, 5 )
-        
-        
-        notebook.panel_01.fgSizer_2.AddSpacer( ( 15, 0), 0, 0, 5 )
-        
-        notebook.panel_01.choice3 = wx.Choice( notebook.panel_01, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_hr, wx.NO_BORDER )
-        notebook.panel_01.choice3.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_MENU ) )
-        notebook.panel_01.choice3.SetSelection( 0 )
-        notebook.panel_01.choice3.Disable()
-        notebook.panel_01.fgSizer_2.Add( notebook.panel_01.choice3, 0, wx.ALIGN_CENTER_VERTICAL, 5 )
-        
-        
-        notebook.panel_01.choice4 = wx.Choice( notebook.panel_01, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, m_choice_mm, wx.NO_BORDER )
-        notebook.panel_01.choice4.SetBackgroundColour( wx.SystemSettings.GetColour( wx.SYS_COLOUR_MENU ) )
-        notebook.panel_01.choice4.SetSelection( 0 )
-        notebook.panel_01.choice4.Disable()
-        notebook.panel_01.fgSizer_2.Add( notebook.panel_01.choice4, 0, wx.ALIGN_CENTER_VERTICAL, 5 )
-        
-        vSizer_panel_01.Add(notebook.panel_01.fgSizer_2, 0, 0, 5)
-        
-        notebook.panel_01.vSizer = wx.BoxSizer( wx.VERTICAL )
-        notebook.panel_01.button_01 = wx.Button( notebook.panel_01, wx.ID_ANY, u"Query", wx.DefaultPosition, wx.Size(60, 15), 0 )
-        notebook.panel_01.vSizer.Add( notebook.panel_01.button_01, 1, wx.ALIGN_RIGHT, 5 )
-        vSizer_panel_01.Add( notebook.panel_01.vSizer, 1, wx.ALIGN_RIGHT, 5 )
-        '''
+       
         
         notebook.panel_01.SetSizer(vSizer_panel_01)
         notebook.panel_01.Layout()
@@ -664,6 +627,7 @@ class View(wx.Frame):
         #ctrl panel_01
         #ctrl panel_01 1f
         #m_choice_table
+        self.m_np1_1f_proj = c_nb1_1f_proj
         self.m_np1_1f_table = c_nb1_1f_table
         self.m_np1_1f_tc_src = tc_nb1_1f_sc
         self.m_np1_1f_tc_state = tc_nb1_1f_state
@@ -730,12 +694,16 @@ class View(wx.Frame):
         
         #aui notebook
         vSizer_auinotebook = wx.BoxSizer(wx.VERTICAL)
-        auimanager = wx.aui.AuiNotebook(self,
+        
+        
+        
+        auinotebook = wx.aui.AuiNotebook(self,
                                         wx.ID_ANY,
                                         wx.DefaultPosition,
                                         wx.DefaultSize,
                                         wx.aui.AUI_NB_DEFAULT_STYLE)
-        vSizer_auinotebook.Add(auimanager, 1, wx.EXPAND, 5)
+        auimanager_t = wx.lib.agw.aui.AuiManager(auinotebook)
+        vSizer_auinotebook.Add(auinotebook, 1, wx.EXPAND, 5)
         vSizer_notebook.Add(vSizer_auinotebook, 1, wx.EXPAND, 5)
         hSizer_all.Add(vSizer_notebook, 1, wx.EXPAND, 5)
         
@@ -756,21 +724,13 @@ class View(wx.Frame):
                              ESB_EXACT_FIT,
                              pos=3)
         
-        '''
-        menubar = wx.MenuBar(0)
-        menu_01 = wx.Menu()
-        menubar.Append(menu_01, u"&File")
-        menu_02 = wx.Menu()
-        menubar.Append(menu_02, u"&Setting")
-        menu_03 = wx.Menu()
-        menubar.Append(menu_03, u"&About")
-        self.SetMenuBar(menubar)
-        '''
+       
         self.Center(wx.BOTH)
         
         self.m_dirpicker = dirpicker
         self.m_treectrl = treectrl
-        self.m_auimanager = auimanager
+        self.m_auinotebook = auinotebook
+        self.m_auimanager_t = auimanager_t
         
         #self.m_np1_button_01 = notebook.panel_01.button_01
         #self.m_active_proj = notebook.panel_01.active_proj
@@ -783,21 +743,26 @@ class View(wx.Frame):
     def Info(text):
         dial = wx.MessageDialog(None, text, 'Info', wx.OK)
         dial.ShowModal()
-    
+        dial.Destroy()
+        
     @staticmethod
     def Warring(text):
         dial = wx.MessageDialog(None, text, 'Error', 
             wx.OK | wx.ICON_ERROR)
         dial.ShowModal()
+        dial.Destroy()
+        
     
     @staticmethod    
     def Question(text):
         dial = wx.MessageDialog(None, text, 'Question', 
             wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
-        dial.ShowModal()
+        return dial.ShowModal().GetValue()
+        dial.Destroy()
     
     @staticmethod
     def Alert(text):
         dial = wx.MessageDialog(None, text, 'Exclamation', 
             wx.OK | wx.ICON_EXCLAMATION)
         dial.ShowModal()
+        dial.Destroy()

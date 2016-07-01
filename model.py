@@ -14,6 +14,7 @@ import multiprocessing as mp
 from multiprocessing import Process as pro, Queue as que, Pool as pool, Manager
 import os
 
+
 #import xlrd
 
 #import xlsgrid
@@ -54,8 +55,10 @@ class LogInfo():
             return self.get_ssm_balloon_msg_title()
         elif self.curProj == 'SSM_Odyssey':
             return self.get_ssm_odyssey_msg_title()
+        elif self.curProj == 'FujiQ_iRide':
+            return self.get_fujiq_iride_msg_title()
         else:
-            pass
+            return 'None'
         pass
     def get_mp_msg_pattern(self):
         if self.curProj == 'SSM_AOT':
@@ -66,8 +69,10 @@ class LogInfo():
             return self.get_ssm_balloon_msg_pattern()
         elif self.curProj == 'SSM_Odyssey':
             return self.get_ssm_odyssey_msg_pattern()
+        elif self.curProj == 'FujiQ_iRide':
+            return self.get_fujiq_iride_msg_pattern()
         else:
-            pass
+            return 'None'
         pass
     
     def get_ssm_aot_msg_title(self):
@@ -188,6 +193,7 @@ class LogInfo():
         return msg_title
         pass
     def get_ssm_aot_msg_pattern(self):
+        #serial=%*d;state=%*d;
         msg_pattern = "serial=%*d;state=%*d;ST=%c%c%c%c;\
                         ERR=%d;\
                         AO=%x,%x,%x,%x,%x,%x;\
@@ -449,6 +455,158 @@ class LogInfo():
         return msg_pattern
         pass
    
+      
+    def get_fujiq_iride_msg_title(self):
+        msg_title = [
+                'power_380', 'power_supply', 'auto_mode', 'btn_lock', 'mpc_error_code', #5
+                'AO #1', 'AO #2', 'AO #3', 'AO #4', 'AO #5', 'AO #6',#6
+                'AI #1', 'AI #2', 'AI #3', 'AI #4', 'AI #5', 'AI #6',#6
+                
+                'cylinder_lower_limit #1', 'cylinder_lower_limit #2', 'cylinder_lower_limit #3',
+                'cylinder_lower_limit #4', 'cylinder_lower_limit #5', 'cylinder_lower_limit #6',#6
+                
+                'motor on output #1', 'motor on output #2', 'motor on output #3',
+                'motor on output #4', 'motor on output #5', 'motor on output #6',#6
+                
+                'motor on input #1', 'motor on input #2', 'motor on input #3',
+                'motor on input #4', 'motor on input #5', 'motor on input #6',#6
+                
+                'brake release output #1', 'brake release output #2', 'brake release output #3',
+                'brake release output #4', 'brake release output #5', 'brake release output #6',#6
+                
+                'brake detect input #1', 'brake detect input #2', 'brake detect input #3',
+                'brake detect input #4', 'brake detect input #5', 'brake detect input #6',#6
+                
+                'servo ai enable #1', 'servo ai enable #2', 'servo ai enable #3',
+                'servo ai enable #4', 'servo ai enable #5', 'servo ai enable #6',#6
+                
+                'servo alarm #1', 'servo alarm #2', 'servo alarm #3',
+                'servo alarm #4', 'servo alarm #5', 'servo alarm #6',#6
+                
+                'servo reset #1', 'servo reset #2', 'servo reset #3',
+                'servo reset #4', 'servo reset #5', 'servo reset #6',#6
+                
+                'servo status #1', 'servo status #2', 'servo status #3',
+                'servo status #4', 'servo status #5', 'servo status #6',#6
+                
+                'servo_alarm_code #1', 'servo_alarm_code #2', 'servo_alarm_code #3',
+                'servo_alarm_code #4', 'servo_alarm_code #5', 'servo_alarm_code #6',#6
+                
+                'servo_alarm_minor_code #1', 'servo_alarm_minor_code #2',
+                'servo_alarm_minor_code #3', 'servo_alarm_minor_code #4',
+                'servo_alarm_minor_code #5', 'servo_alarm_minor_code #6',#6
+                
+                'servo_current #1', 'servo_current #2', 'servo_current #3',
+                'servo_current #4', 'servo_current #5', 'servo_current #6',#6
+                
+                'servo_busvoltage #1', 'servo_busvoltage #2', 'servo_busvoltage #3',
+                'servo_busvoltage #4', 'servo_busvoltage #5', 'servo_busvoltage #6',#6
+                
+                'servo_ai #1', 'servo_ai #2', 'servo_ai #3',
+                'servo_ai #4', 'servo_ai #5', 'servo_ai #6',#6
+                
+                'servo_speed #1', 'servo_speed #2', 'servo_speed #3',
+                'servo_speed #4', 'servo_speed #5', 'servo_speed #6',#6
+                
+                'servo_hour #1', 'servo_hour #2', 'servo_hour #3',
+                'servo_hour #4', 'servo_hour #5', 'servo_hour #6',#6
+                
+                'is_carrier_remoteio_conn',
+                'i_carrier_auto_control',
+                'i_carrier_interlock',
+                'i_carrier_vfd_error',
+                
+                'o_carrier_moving_forward',
+                'o_carrier_moving_backward',
+                'i_carrier_front',
+                'i_carrier_back',
+                'i_carrier_over',
+                'i_carrier_high_speed',
+                
+                'i_carrier_pressure', 
+                'o_carrier_up_lock', 
+                'o_carrier_up_unlock',  
+                'i_carrier_up_lock #1', 
+                'i_carrier_up_lock #2',
+                'i_carrier_up_unlock #1', 
+                'i_carrier_up_unlock #2',
+                
+                'o_carrier_down_lock', 
+                'o_carrier_down_unlock',
+                
+                'i_carrier_down_lock[0]', 
+                'i_carrier_down_lock[1]', 
+                'i_carrier_down_unlock[0]', 
+                'i_carrier_down_unlock[1]',
+                
+                'is_sb_remoteio_conn', 
+                'o_seatbelt_buckle_unlock', 
+                'o_seatbelt_roller_unlock', 
+                
+                'i_seatbelt #1', 'i_seatbelt #2', 'i_seatbelt #3', 'i_seatbelt #4', 'i_seatbelt #5',
+                'i_seatbelt #6', 'i_seatbelt #7', 'i_seatbelt #8', 'i_seatbelt #9', 'i_seatbelt #10',#10
+                
+                'o_seatbelt_led_enable', 'i_all_sb_lock',
+                
+                'i_canopy_auto_control', 
+                'o_canopy_up', 
+                'o_canopy_down', 
+                'i_canopy_up', 
+                'i_canopy_down', 
+                'i_canopy_up_over', 
+                'i_canopy_down_over',
+                
+                'is_gt_remoteio_conn', 
+                'i_gate_auto_control', 
+                'i_gate_interlock', 
+                'i_gate_vfd_error', 
+                'o_gate_close', 'o_gate_open', 
+                'i_gate_close', 'i_gate_close_over_limit', 'i_gate_open', 'i_gate_open_over_limit',
+                
+                'o_door_close #1', 'o_door_close #2', 'i_door_close #1', 'i_door_close #2',#DR
+                
+                'is_es_remoteio_conn', 'o_pwm_orentation_led', 'o_pwm_wind', 'o_spray_enable', 
+                
+                'o_scent_release #1', 'o_scent_release #2', 'o_scent_release #3',
+                
+                'play_last_ms', 'play_sync_ms', 'play_time_ms'#MS
+            ]
+        return msg_title
+        pass
+    def get_fujiq_iride_msg_pattern(self):
+        #serial=%*d;state=%*d;
+        msg_pattern = "ST=%c%c%c%c;\
+                        ERR=%d;\
+                        AO=%x,%x,%x,%x,%x,%x;\
+                        AI=%x,%x,%x,%x,%x,%x;\
+                        LL=%c%c%c%c%c%c;\
+                        RUN=%c%c%c%c%c%c,%c%c%c%c%c%c;\
+                        BKR=%c%c%c%c%c%c,%c%c%c%c%c%c;\
+                        EN=%c%c%c%c%c%c;\
+                        ALM=%c%c%c%c%c%c;\
+                        RST=%c%c%c%c%c%c;\
+                        SVO=%4c,%4c,%4c,%4c,%4c,%4c;\
+                        ALMC=%4c,%4c,%4c,%4c,%4c,%4c;\
+                        MINC=%16c,%16c,%16c,%16c,%16c,%16c;\
+                        A=%f,%f,%f,%f,%f,%f;\
+                        V=%f,%f,%f,%f,%f,%f;\
+                        AI%%=%f,%f,%f,%f,%f,%f;\
+                        SPD=%f,%f,%f,%f,%f,%f;\
+                        HR=%f,%f,%f,%f,%f,%f;\
+                        CA=%c%c%c%c,%c%c,%c%c%c%c;\
+                        CL=%c,%c%c,%c%c%c%c,%c%c,%c%c%c%c;\
+                        SB=%c,%c%c,%c%c%c%c%c%c%c%c%c%c,%c,%c;\
+                        CN=%c,%c%c,%c%c%c%c;\
+                        GT=%c%c%c%c,%c%c,%c%c%c%c;\
+                        DR=%c%c,%c%c;\
+                        ES=%c,%x,%x,%c,%c%c%c;\
+                        MS=%f,%f,%f;"
+        return msg_pattern
+        pass
+
+    
+    
+
 
 class MultiWorker():
 
@@ -571,19 +729,7 @@ class HugeTable(gridlib.PyGridTableBase):
         self.ReadyOnly.SetReadOnly(True)
         
         pass
-    '''
-    def RefreshData(self, data, isOk):
-        
-        print 'test'
-        
-        for index, row in enumerate(data[1:]):
-            #self.queue.put_nowait(row)
-            self.data[index] = row
-            print index
-        
-        isOk = True
-        
-    #'''
+   
     def UpdateData(self, title, data, rows, cols):
         
         self.title = title
@@ -631,62 +777,7 @@ class HugeTable(gridlib.PyGridTableBase):
     def SetValue(self, row, col, value):
         
         self.data.write('SetValue(%d, %d, "%s") ignored.\n' % (row, col, value))
-''' 
-class ParseWorker():
-    def __init__(self):
-        
-        
-        self.workerCount = mp.cpu_count()
-        self.workerPool = Que.Queue(100)
-        self.jobsMaximum = 100
-        self.jobsPoll = Que.Queue(self.jobsMaximum)
-        self.BackThd = None
-        print self.workerCount
-    
-    def Done(self):
-        if not self.jobsPoll.empty():
-            self.jobsPoll.get_nowait()
-        #print 'done'
-        
-        pass
-    
-    def proc(self):
-    
-        job = None
-        if  not self.jobsPoll.empty():
-            job = self.jobsPoll.get_nowait()
-        else:
-            print 'get job wait...'
-            job = self.jobsPoll.get(True,None)
-        
-        p = None
-        p = mp.Process(target=job, args=())
-        if not self.workerPool.full():
-            p.start()
-            self.workerPool.put_nowait(p)
-        else:
-            self.workerPoll.put(p, True, None)
-            print 'proc job wait...'
-            p.start()
-        
-        pass
-    
-    def Start(self):
-        if self.BackThd == None:
-            self.BackThd = Thd.Thread(target=self.proc, args=()).start()
-    
-    def AddJobs(self, job):
-        if not self.jobsPoll.full():
-            self.jobsPoll.put_nowait(job)
-        elif self.jobsPoll.full():
-            print 'add job wait...'
-            self.jobsPoll.put(job, True, None)
-        else:
-            print 'error'
-            pass
-        print self.jobsPoll.qsize()
-        pass
-'''    
+
 class Sqlite():
     def __init__(self):
         self.tableName = ''
@@ -854,28 +945,11 @@ class Sqlite():
             return count
         pass
     
-    #@staticmethod
-    '''
-    def get_data_repeat(self, filename, row_limit):
-        data = list()
-        if self.count == 0:#first call
-            print type(self.get_total_row_number(filename)[0][0])
-            self.data_len = self.get_total_row_number(filename)[0][0]
-        offset = self.count * row_limit
-        if (self.data_len - offset) < row_limit:
-            row_limit = self.data_len - offset
-            cmd = "SELECT * FROM %s LIMIT %s OFFSET %s"%(self.tableName, row_limit, offset)
-            data = self.execute_command(filename, cmd)
-            self.count = 0
-            self.data_len = 0
-        else:
-            cmd = "SELECT * FROM %s LIMIT %s OFFSET %s"%(self.tableName, row_limit, offset)
-            data = self.execute_command(filename, cmd)
-        self.count += 1
-        return data 
-        pass
-    '''
-    
+   
+#global paremeter
+project_name = 'unknow'
+
+  
 class LogParse():
     def __init__(self):
         #Sqlite Database
@@ -903,7 +977,9 @@ class LogParse():
         if self.filename == None:
             self.curProj = 'unknow'#current project
         
-      
+    
+    
+    
     def set_filename(self, filename):
         self.filename = filename
         self.curProj = self.find_current_project()
@@ -926,6 +1002,14 @@ class LogParse():
         
     def find_current_project(self):
         
+     
+        global project_name
+        if project_name == 'unknow':
+            View.View.Warring('No Project')
+          
+        return project_name
+        
+        '''
         cmd = 'SELECT %s FROM %s LIMIT 1'%(self.id_token, self.tableName)
         data = self.sqlite.execute_command(self.filename, cmd)[0]
         
@@ -949,8 +1033,9 @@ class LogParse():
             self.curProj = 'SSM_Balloon'
         else:
             self.curProj = 'unknow'
-
+        
         return self.curProj
+        '''
     '''
     def find_mp_message(self, src, level):
         proj = self.curProj
@@ -975,7 +1060,7 @@ class LogParse():
         pass
     #'''
     #@staticmethod
-    def mp_message_parsing(self, mp_message_t):
+    def parse_v1(self, mp_message_t):
         if isinstance(mp_message_t, str):
             pass
         else:
@@ -985,21 +1070,18 @@ class LogParse():
         
         result_mp_message = OrderedDict()
         _info = LogInfo()
-        if self.curProj == '':
+        if self.curProj == 'None':
             return
         _info.set_current_project(self.curProj)
+        
         mpc_log_message = mp_message_t.partition('MPLOG=')[2]
         log_message = mp_message_t.partition('MPLOG')[0]
         
         _title = _info.get_mp_msg_title()
-        _pattern = _info.get_mp_msg_pattern()
-        #print log_message
-        #'''
         
-        #'''
+        _pattern = _info.get_mp_msg_pattern()
         
         _data = scanner.sscanf(log_message, _pattern)
-        
         
         
         for index, key in enumerate(_title):
@@ -1008,14 +1090,12 @@ class LogParse():
             pass
         
         result_mp_message['MPLOG'] = mpc_log_message
-        #global mp_message
-        #mp_message = result_mp_message
         return result_mp_message
        
         
         pass
     #'''
-    def mp_message_parse(self, mp_message_t):
+    def parse_v0(self, mp_message_t):
         if isinstance(mp_message_t, str):
             pass
         else:
@@ -1049,7 +1129,7 @@ class LogParse():
         
         result_mp_message = OrderedDict()
         _info = LogInfo()
-        if self.curProj == '':
+        if self.curProj == 'None':
             return
         _info.set_current_project(self.curProj)
         mpc_log_message = mp_message_t.partition('MPLOG=')[2]
@@ -1083,6 +1163,18 @@ class LogParse():
         
         pass
     #'''
+    
+    def mp_message_parse(self, mp_message_t):
+       
+        _info = LogInfo()
+        _info.set_current_project(self.curProj)
+        
+        if _info.get_mp_msg_pattern() == "None":
+            return self.parse_v0(mp_message_t)
+        else:
+            return self.parse_v1(mp_message_t)
+        pass
+    
     
     def mp_message_standardize(self, mp_message_t):
         if isinstance(mp_message_t, str):
@@ -1185,7 +1277,7 @@ class Model():
         
         self.filename = filename
         if self.filename == '':
-            print 'error'
+            View.View.Warring('invalid file')
             return
         self.parse.set_filename(self.filename)
         #self.worker = ParseWorker()
@@ -1247,7 +1339,7 @@ class Model():
         else:
             cmd = cmd + order + range
             
-            #print 'start'
+            
             raw_data = self.parse.sqlite.execute_command(self.filename, cmd)            
             
             View.g_progress.Pulse()
@@ -1271,18 +1363,12 @@ class Model():
         
         
         if not len(raw_data) >= 1:
-            print 'error'
+            View.View.Warring('no result')
             return
         else:
             pass
         
-        
-        
-       
-        
         data = []
-        #data = []
-        #data[0] = self.mGetTitle(cmd) 
         data.append(self.mGetTitle(cmd))
         self.mDataRowProc(raw_data, data, queue=None)
         
@@ -1293,7 +1379,7 @@ class Model():
         
         mQue = quene
         if not len(raw_data) >= 1:
-            print 'error'
+            View.View.Warring('no result')
             return
         else:
             pass
@@ -1368,25 +1454,13 @@ class Model():
                 mQue.put(data[row_count], True)
             row_count += 1
         pass
-    '''
-    def hello(self, data):
-        print '========================output========================'
-        #print data[8111]
-        
-        for set in data:
-            #print set
-            
-            for row in set:
-                print row
-            
-        
-    '''
+   
     
    
     def SetMultiDataToGrid(self, raw_data, cmd):#multiprocess
         #direct error
         if not len(raw_data) >= 1:
-            print 'error'
+            View.View.Warring('no result')
             return
         else:
             pass
@@ -1431,7 +1505,7 @@ class Model():
                 elif ind == 5:
                     if self.parse.find_mp_message(row[ind]) and self.IsParsing:
                         mp_message_t = self.parse.mp_message_standardize(row[ind])       
-                        mp_message = self.parse.mp_message_parsing(mp_message_t)#return OrderedDict()
+                        mp_message = self.parse.mp_message_parse(mp_message_t)#return OrderedDict()
                         if first_append_title:
                             for keys in mp_message:
                                 result_title.append(keys)
