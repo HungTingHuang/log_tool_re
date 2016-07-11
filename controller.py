@@ -388,28 +388,69 @@ class GridDataPage(wx.Panel):
         pass
     
     def OnShowPopupMenu(self, evt):
-        #print evt.GetX(), evt.GetY()
-        if not hasattr(self, "popupID1"):
-            self.popupID1 = wx.NewId()
-            self.popupID2 = wx.NewId()
-            self.popupID3 = wx.NewId()
-            # make a menu
- 
-        menu = wx.Menu()
-        # Show how to put an icon in the menu
-        item = wx.MenuItem(menu, self.popupID1,"One")
-        menu.AppendItem(item)
-        menu.Append(self.popupID2, "Two")
-        menu.Append(self.popupID3, "Three")
- 
-        # Popup the menu.  If an item is selected then its handler
-        # will be called before PopupMenu returns.
+        col_label = evt.GetCol()
+        label_name = self.mGrid.GetColLabelValue(col_label)
+        row_grid_number = self.mGrid.GetNumberRows()
+        col_grid_number = self.mGrid.GetNumberCols()
+        
+        
+        if not hasattr(self, 'popupID1'):
+                self.popupID1 = wx.NewId()
+                #self.popupID2 = wx.NewId()
+                #self.popupID3 = wx.NewId()
+             
+        menu = wx.Menu(title=label_name)
+       
+        
+        if evt.GetRow() == -1:#right click col label
+            
+            # is col ai or ao
+            if 'ai' in str(label_name).lower() or 'ao' in str(label_name).lower():
+                item_plot = wx.MenuItem(menu, self.popupID1, 'plot', '', wx.ITEM_CHECK)
+                menu.AppendItem(item_plot)
+                menu.Bind(wx.EVT_MENU, self.OnPlot(col_id = col_label), item_plot)
+            
+            
+            
+            pass
+        
+        if evt.GetCol() == -1:#right click row label
+            print 'row label'
+            pass
+        
         
         self.mParent.GetParent().PopupMenu(menu)
-        menu.Destroy()
-        
+        #menu.Destroy()
+       
         pass
 
+    def OnPlot(self, evt, col_id):
+        print '= ==== ='
+        
+        #menu = target
+        #item_id = menu.FindItem('plot')
+        #item = menu.FindItemById(item_id)
+        #print item.IsChecked()
+        #print item, item_id
+        
+       
+        #print self.mGrid.GetColLabelValue(col)
+        
+        #print 'test', col
+        
+        
+        '''
+        row_aio_data = list()
+        
+        for i in range(self.mGrid.GetNumberRows()):
+            row_aio_data.append(self.mGrid.GetCellValue(i, col))
+        print row_aio_data, len(row_aio_data)
+        '''
+        pass
+    
+    
+    
+    
 class HugeTableGrid(wx.grid.Grid):
     def __init__(self, parent, title, data, rows, cols):
         wx.grid.Grid.__init__(self, parent, -1)
@@ -741,11 +782,11 @@ class Controller:
         
         if self.IsPageMax == True and self.m_view.m_auinotebook.GetPageCount() == 0:
             
-            #self.m_view.m_dirpicker.Show()
-            #self.m_view.m_treectrl.Show()
-            #self.m_view.m_notebook.Show()
-            #self.m_view.Layout()
-            #self.IsPageMax = False
+            self.m_view.m_dirpicker.Show()
+            self.m_view.m_treectrl.Show()
+            self.m_view.m_notebook.Show()
+            self.m_view.Layout()
+            self.IsPageMax = False
             pass
         else:
             pass

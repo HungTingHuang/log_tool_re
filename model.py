@@ -659,6 +659,7 @@ class MultiWorker():
         
         for res in multiple_results:
             res.get(timeout=None)
+            
         over_time = time.time()
         print over_time - start_time
         print 'proc over'
