@@ -947,7 +947,7 @@ class Sqlite():
     
    
 #global paremeter
-project_name = 'unknow'
+project_name = ''
 
   
 class LogParse():
@@ -1070,7 +1070,7 @@ class LogParse():
         
         result_mp_message = OrderedDict()
         _info = LogInfo()
-        if self.curProj == 'None':
+        if self.curProj == 'None' or not self.curProj:
             return
         _info.set_current_project(self.curProj)
         
@@ -1081,11 +1081,13 @@ class LogParse():
         
         _pattern = _info.get_mp_msg_pattern()
         
-        _data = scanner.sscanf(log_message, _pattern)
-        
+        try:
+            _data = scanner.sscanf(log_message, _pattern)
+        except:
+            return
+            
         
         for index, key in enumerate(_title):
-            
             result_mp_message[key] = _data[index]
             pass
         
@@ -1169,11 +1171,14 @@ class LogParse():
         _info = LogInfo()
         _info.set_current_project(self.curProj)
         
+        
         if _info.get_mp_msg_pattern() == "None":
             return self.parse_v0(mp_message_t)
         else:
             return self.parse_v1(mp_message_t)
         pass
+        
+            
     
     
     def mp_message_standardize(self, mp_message_t):
@@ -1282,6 +1287,9 @@ class Model():
         self.parse.set_filename(self.filename)
         #self.worker = ParseWorker()
     
+    
+    
+    
     def SetTimeZone(self, timezone):
         self.timezone = timezone
         self.parse.set_timezone(self.timezone)
@@ -1291,7 +1299,7 @@ class Model():
         self.IsParsing = bool(IsParsing)
         pass
     def SetIsMultiProcessing(self, IsMultiProcessing):
-        self.IsMultiProcessing =IsMultiProcessing
+        self.IsMultiProcessing =bool(IsMultiProcessing)
         pass
     
     def GetFullDataCmd(self):
@@ -1375,86 +1383,6 @@ class Model():
         
         return data
         pass
-    def SetDataToQuene(self, raw_data, cmd, quene):
-        
-        mQue = quene
-        if not len(raw_data) >= 1:
-            View.View.Warring('no result')
-            return
-        else:
-            pass
-        
-        
-        
-        first_append_title = True
-        data = [[] for _ in range(len(raw_data)+1)]
-        title = self.parse.find_table_col_name(cmd)
-        
-        
-        mp_message_t = ''
-        for item in title:
-            data[0].append(item)
-        
-        iter = data[0].index('ts')
-        data[0][iter] = 'timestamp'
-        iter +=1
-        data[0].insert(iter, 'time')
-        iter +=1
-        data[0].insert(iter, 'ms')
-        
-        if 'msg' in data[0]:
-            data[0][data[0].index('msg')] = 'mc_log'
-        
-        
-        mp_message = OrderedDict()
-        row_count = 1
-        for index, row in enumerate(raw_data):
-            
-            for ind, value in enumerate(row):
-                
-                if ind == 0:
-                    data[row_count].append(row[ind])
-                   
-                    data[row_count].append(self.parse.timestamp_convert(row[ind])['time'])
-                    data[row_count].append(self.parse.timestamp_convert(row[ind])['ms'])
-                elif ind == 5:
-                    if  self.parse.find_mp_message(row[ind]) and self.IsParsing:
-                        
-                        mp_message_t = self.parse.mp_message_standardize(row[ind])
-                       
-                        mp_message = self.parse.mp_message_parsing(mp_message_t)#return OrderedDict()
-                        #write title to quene
-                        if first_append_title:
-                            for keys in mp_message:
-                                data[0].append(keys)
-                                first_append_title = False
-                                pass
-                            if not mQue.full():
-                                mQue.put_nowait(data[0])
-                            else:
-                                mQue.put(data[0], True)
-                        #   
-                            
-                        data[row_count].append('')
-                        
-                        for key in mp_message:
-                            data[row_count].append(mp_message[key])
-    
-                        pass
-                    else:
-                        data[row_count].append(row[ind])
-                        pass
-                    
-                else:
-                    data[row_count].append(row[ind])
-                    pass
-            if not mQue.full():
-                mQue.put_nowait(data[row_count])
-            else:
-                mQue.put(data[row_count], True)
-            row_count += 1
-        pass
-   
     
    
     def SetMultiDataToGrid(self, raw_data, cmd):#multiprocess

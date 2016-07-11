@@ -18,15 +18,46 @@ from openpyxl.styles import Font, Color
 from openpyxl.styles import colors
 from collections import OrderedDict
 import threading as Thd
+import matplotlib
 
 
+class PlotDataPage(wx.Panel):
+    def __init__(self, parent, page_name):
+        self.mPage = wx.Panel(parent, 
+                         wx.ID_ANY, 
+                         wx.DefaultPosition, 
+                         wx.DefaultSize, 
+                         wx.TAB_TRAVERSAL)
+        pageSizer = wx.BoxSizer(wx.VERTICAL)
+        
+        
+        self.mPage.SetSizer(pageSizer)
+        self.mPage.Layout()
+        parent.AddPage(self.mPage, page_name, False)
+        
+        pass
 
 
+class ParseDataPage(wx.Panel):
+    def __init__(self, parent, page_name):
+        self.mPage = wx.Panel(parent, 
+                         wx.ID_ANY, 
+                         wx.DefaultPosition, 
+                         wx.DefaultSize, 
+                         wx.TAB_TRAVERSAL)
+        pageSizer = wx.BoxSizer(wx.VERTICAL)
+        
+        
+        self.mPage.SetSizer(pageSizer)
+        self.mPage.Layout()
+        parent.AddPage(self.mPage, page_name, False)
+        
+        pass
 
 class GridDataPage(wx.Panel):
     def __init__(self, parent, page_name, filename, cmd, grid_row_limit, isMp, isParsing, timezone,  args, args_index):
-         
         ##Panel Setting
+        self.mParent = parent
         self.mPage = wx.Panel(parent, 
                          wx.ID_ANY, 
                          wx.DefaultPosition, 
@@ -198,6 +229,9 @@ class GridDataPage(wx.Panel):
         parent.Bind(wx.EVT_SPIN_UP, self.OnSpinUp, self.spinButton)
         parent.Bind(wx.EVT_SPIN_DOWN, self.OnSpinDown, self.spinButton)
         parent.Bind(wx.EVT_BUTTON, self.OnExportExcel, exportButton)
+        
+        self.mGrid.Bind(wx.grid.EVT_GRID_LABEL_RIGHT_CLICK, self.OnShowPopupMenu)
+        #self.mGrid.GetGridWindow().Bind(wx.grid.EVT_GRID_LABEL_RIGHT_CLICK, self.OnShowPopupMenu)
         pass
     
     
@@ -350,6 +384,29 @@ class GridDataPage(wx.Panel):
         View.Info("Process has Done!")
         
         
+        
+        pass
+    
+    def OnShowPopupMenu(self, evt):
+        #print evt.GetX(), evt.GetY()
+        if not hasattr(self, "popupID1"):
+            self.popupID1 = wx.NewId()
+            self.popupID2 = wx.NewId()
+            self.popupID3 = wx.NewId()
+            # make a menu
+ 
+        menu = wx.Menu()
+        # Show how to put an icon in the menu
+        item = wx.MenuItem(menu, self.popupID1,"One")
+        menu.AppendItem(item)
+        menu.Append(self.popupID2, "Two")
+        menu.Append(self.popupID3, "Three")
+ 
+        # Popup the menu.  If an item is selected then its handler
+        # will be called before PopupMenu returns.
+        
+        self.mParent.GetParent().PopupMenu(menu)
+        menu.Destroy()
         
         pass
 
@@ -536,7 +593,7 @@ class HugeTableGrid(wx.grid.Grid):
         pass
 
 
-#ctr global paremeter
+
 
 
 class Controller:
@@ -564,15 +621,13 @@ class Controller:
         #self.m_view.super().Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         
         
-        
+        self.IsPageMax = False
         #auimanager EVT_AUINOTEBOOK_TAB_RIGHT_DOWN(winid, fn):
-        self.m_view.Bind(wx.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnANBPageChanged, self.m_view.m_auinotebook)
-        
-        
-        #self.m_view.Bind(wx.lib.agw.aui.EVT_AUINOTEBOOK_TAB_DCLICK , self.OnANBPageMaxing, self.m_view.m_auimanager_t)
-       
-        #self.m_view.Bind(wx.aui.EVT_, self.OnANBPageMaxing, self.m_view.m_auimanager)
-        
+        self.m_view.Bind(wx.lib.agw.aui.EVT_AUINOTEBOOK_PAGE_CHANGED, self.OnANBPageChanged, self.m_view.m_auinotebook)
+        self.m_view.Bind(wx.lib.agw.aui.EVT_AUINOTEBOOK_TAB_DCLICK , self.OnANBPageMaxing, self.m_view.m_auinotebook)
+        self.m_view.Bind(wx.lib.agw.aui.EVT_AUINOTEBOOK_PAGE_CLOSED , self.OnANBPageClosing, self.m_view.m_auinotebook)
+        #self.m_view.Bind(wx.aui.EVT__AUINOTEBOOK_TAB_RIGHT_DOWN, self.OnANBPageMaxing, self.m_view.m_auinotebook)
+        #wx.aui.EVT
         #treectrl
         self.m_view.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged, self.m_view.m_treectrl)
         self.m_view.Bind(wx.EVT_DIRPICKER_CHANGED, self.OnDirSelected, self.m_view.m_dirpicker)
@@ -635,8 +690,26 @@ class Controller:
         
         #self.m_view.Bind(wx.EVT_TEXT, self.OntcCMDChanged, self.m_view.m_np1_3f_tc_cmd)
         
+        
+        
+        #panel #2
+        self.m_view.Bind(wx.EVT_BUTTON, self.OnPanel2Test, self.m_view.btn_nb2_test)
+        
+        
+        
+        
+        
+        
+        
         self.m_view.Show()
-      
+    
+    def OnPanel2Test(self, evt):
+        
+        ParseDataPage(self.m_view.m_auinotebook,
+                      'test')
+        
+        pass
+     
     def OnANBPageChanged(self, evt):
         pageID = evt.GetSelection()
         pageName = self.m_view.m_auinotebook.GetPageText(pageID)
@@ -650,9 +723,33 @@ class Controller:
     
     #evt dir picker
     def OnANBPageMaxing(self, evt):
-        print 'hello world'
+        
+        if self.IsPageMax == True:
+            self.m_view.m_dirpicker.Show()
+            self.m_view.m_treectrl.Show()
+            self.m_view.m_notebook.Show()
+            self.m_view.Layout()
+            self.IsPageMax = False
+        elif self.IsPageMax == False:
+            self.m_view.m_dirpicker.Hide()
+            self.m_view.m_treectrl.Hide()
+            self.m_view.m_notebook.Hide()
+            self.m_view.Layout()
+            self.IsPageMax = True
         pass
-   
+    def OnANBPageClosing(self, evt):
+        
+        if self.IsPageMax == True and self.m_view.m_auinotebook.GetPageCount() == 0:
+            
+            #self.m_view.m_dirpicker.Show()
+            #self.m_view.m_treectrl.Show()
+            #self.m_view.m_notebook.Show()
+            #self.m_view.Layout()
+            #self.IsPageMax = False
+            pass
+        else:
+            pass
+        
     
     
     def OnDirSelected(self, evt):
@@ -671,11 +768,14 @@ class Controller:
         if _sql.is_sqlite_file(itemPath):
             self.current_select_file_path = itemPath
             _model = model.Model(itemPath)
-            self.current_select_project_name = _model.parse.find_current_project()
+            #self.current_select_project_name = _model.parse.find_current_project()
             self.current_select_file_name = itemName
             self.current_select_file_path = itemPath
-            self.show_current_file = '%s: %s'%(self.current_select_project_name, itemName)
+            #self.show_current_file = '%s: %s'%(self.current_select_project_name, itemName)
+            
+            self.show_current_file = '%s'%(itemName)
             self.m_view.m_statusBar.SetStatusText(self.show_current_file, 0)
+            #get file daytime
             self.current_select_file_daytime = _model.parse.find_current_project_daytime()
             
             
@@ -714,14 +814,15 @@ class Controller:
                 #setting model
                 
                 
-                projName = self.proj_name
+                projName = 'preview'
+                #projName = 'Preview'
                 self.current_select_project_name = projName
                 self.show_current_file = '%s: %s'%(projName, itemName)
-                page_name = '%s: %s [preview]'%(projName, itemName)
+                page_name = '%s: %s'%(projName, itemName)
                 self.m_view.m_statusBar.SetStatusText(self.show_current_file, 0)
                 
                 isParsing = False#_model.SetIsParsing(0)#mp_message don`t parse
-                isMP = False
+                isMP = False#multiprocess
                 GridDataPage(self.m_view.m_auinotebook, 
                              page_name, 
                              itemPath,
@@ -876,7 +977,7 @@ class Controller:
         
         tn = ''
         if self.tablename == '' or self.tablename == None or self.tablename == 'Table Name':
-            tn = 'log_raw'
+            pass
         else:
             tn = self.tablename
         
@@ -934,10 +1035,21 @@ class Controller:
         pass
     def OnbtnQuery(self, evt):
         if not self.current_select_file_path:
+            
             pass
         else:
+            #project name & tablename not null
+            #'''
+            if not self.proj_name or self.proj_name == 'Project Name':
+                View.Warring('Select a Project')
+                return
+                
+            if not self.tablename or self.tablename == 'Table Name':
+                View.Warring('Select a Table')
+                return
+            #'''
             
-            page_name = "%s: %s"%(self.current_select_project_name, 
+            page_name = "%s: %s"%(self.proj_name, 
                                   self.current_select_file_name)
             isParsing = True
             isMP = True
@@ -945,16 +1057,6 @@ class Controller:
             if 'format' in self.tablename:
                 isMP = False
 
-            '''
-            Thd.Thread(target=GridDataPage, args=(self.m_view.m_auinotebook, 
-                                                  page_name, 
-                                                  self.current_select_file_path, 
-                                                  self.cmd, 
-                                                  self.grid_max_row_number,
-                                                  isParsing,
-                                                  0,
-                                                  0)).start()
-            '''
             #'''
             GridDataPage(self.m_view.m_auinotebook, 
                              page_name, 
@@ -1247,126 +1349,7 @@ class Controller:
                 traceItem = tree.GetItemParent(traceItem)
         return currentPath
                 
-    """
-    def mAddGridPage(self, page_name, col_title, data):
-       
-        self.lock.acquire()
-        mParent = self.m_view.m_auinotebook
-        
-        mPanel = wx.Panel(mParent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
-        Panel_Sizer = wx.BoxSizer(wx.VERTICAL)
-        
-        row_size = len(data)
-        col_size = len(col_title)
-        
-        mGrid = HugeTableGrid(mPanel, col_title, data, row_size, col_size)
-        '''
-        mGrid = wx.grid.Grid(mPanel)
-        mGrid.CreateGrid(row_size, col_size)
-        
-        for i in range(0, len(col_title)):
-            mGrid.SetColLabelValue(i, col_title[i])
-        
-        
-        #data 0~1024 1025
-        for row in range(0, row_size): #0~1023
-            for col in range(0, len(data[row+1])):
-                mGrid.SetCellValue(row, col, "%s"%data[row+1][col])
-                #mGrid.SetReadOnly(row, col, True)
-                pass
-            mGrid.AutoSizeColumn(col, True)
-            pass
-        #'''
-        
-        
-        Panel_Sizer.Add( mGrid, 1, wx.ALL|wx.EXPAND, 5 )
-        mPanel.SetSizer(Panel_Sizer)
-        mPanel.Layout()
-        self.m_view.m_auinotebook.AddPage(mPanel, page_name, False)
-        self.lock.release()
-       
-        pass
-    """
-    """
-    def mAddMultiGridPage(self, filename, page_name):
-        mParent = self.m_view.m_auinotebook
-        mPanel = wx.Panel(mParent, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL)
-        Panel_Sizer = wx.BoxSizer(wx.VERTICAL)
-        
-        mPanel.yy = 'ssssssssssssssssssssssssssssssssssssssssssss'
-        
-        status_Sizer = wx.BoxSizer(wx.HORIZONTAL)
-        grid_Sizer = wx.BoxSizer(wx.VERTICAL)
-        Panel_Sizer.Add( status_Sizer, 0, 0, 5 )
-        Panel_Sizer.Add( grid_Sizer, 0, wx.EXPAND, 5 )
-            
-        
-        parse = model.LogParse()
-        data_len = parse.find_total_row_number(filename)
-        row_limit = self.grid_max_row_number
-        page_number = 1
-                
-                
-        if data_len > row_limit:
-            page_number = data_len/row_limit
-            if not data_len%row_limit == 0:
-                page_number += 1
-            else:
-                pass
-        else:
-            pass 
-        
-        
-        spinCtrl = wx.SpinCtrl(mPanel, 
-                                 wx.ID_ANY, u'454545', 
-                                 wx.DefaultPosition, 
-                                 wx.DefaultSize, 
-                                 wx.SP_WRAP, 
-                                 1, page_number, 1)
-        '''
-        spinCtrl = wx.SpinButton(mPanel, 
-                                 wx.ID_ANY,
-                                 wx.DefaultPosition, 
-                                 wx.DefaultSize, 
-                                 wx.SP_WRAP)
-        '''
-        staticText = wx.StaticText( mPanel, 
-                                    wx.ID_ANY, 
-                                    u"Total Rows: " + str(data_len), 
-                                    wx.DefaultPosition, 
-                                    wx.DefaultSize, 0 )
-        status_Sizer.Add(spinCtrl, 1, wx.EXPAND|wx.RIGHT, 5)
-        status_Sizer.Add(staticText, 1, wx.ALL, 5)        
-                
-        offset = 0
-        '''
-        for num in range(0, page_number):
-            page_name_text =  page_name + '_#' + str(num)
-            data = self.m_model.GetRowRangeData(filename, row_limit, offset)
-            offset += (row_limit+1)
-                    
-            if data and len(data) >1:
-                self.mAddMultiGridPage(page_name, data[0], data)
-                        #self.mAddGridPage(page_name_text, data[0], data)
-            else:
-                pass
-        pass
-        '''
-        
-        self.m_view.Bind(wx.EVT_SPINCTRL, self.mTest, spinCtrl)
-        data = self.m_model.GetRowRangeData(filename, row_limit, offset)
-        
-        
-        row_size = len(data)
-        col_size = len(data[0])
-        mGrid = HugeTableGrid(mPanel, data[0], data, row_size, col_size)
-        
-        grid_Sizer.Add( mGrid, 1, wx.EXPAND, 5 )
-        mPanel.SetSizer(Panel_Sizer)
-        mPanel.Layout()
-        self.m_view.m_auinotebook.AddPage(mPanel, page_name, False)
-        pass
-    """
+    
     
     
     

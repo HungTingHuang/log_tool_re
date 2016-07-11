@@ -663,6 +663,13 @@ class View(wx.Frame):
                                      wx.TAB_TRAVERSAL)
         vSizer_panel_02 = wx.BoxSizer( wx.VERTICAL )
         
+        self.btn_nb2_test = wx.Button( notebook.panel_02, 
+                                      wx.ID_ANY, 
+                                      u"Test", 
+                                      wx.DefaultPosition, 
+                                      wx.DefaultSize, 0 )
+        vSizer_panel_02.Add(self.btn_nb2_test, 0, wx.ALIGN_CENTER_VERTICAL, 5)
+        
         notebook.panel_02.SetSizer(vSizer_panel_02)
         notebook.panel_02.Layout()
         vSizer_panel_02.Fit(notebook.panel_02)
@@ -697,12 +704,15 @@ class View(wx.Frame):
         
         
         
-        auinotebook = wx.aui.AuiNotebook(self,
-                                        wx.ID_ANY,
-                                        wx.DefaultPosition,
-                                        wx.DefaultSize,
-                                        wx.aui.AUI_NB_DEFAULT_STYLE)
-        auimanager_t = wx.lib.agw.aui.AuiManager(auinotebook)
+        
+        auinotebook = wx.wx.lib.agw.aui.AuiNotebook(self,
+                                                    wx.ID_ANY,
+                                                    wx.DefaultPosition,
+                                                    wx.DefaultSize,
+                                                    wx.aui.AUI_NB_DEFAULT_STYLE)
+        
+        #auimanager_t = wx.lib.agw.aui.AuiManager(auinotebook)
+        
         vSizer_auinotebook.Add(auinotebook, 1, wx.EXPAND, 5)
         vSizer_notebook.Add(vSizer_auinotebook, 1, wx.EXPAND, 5)
         hSizer_all.Add(vSizer_notebook, 1, wx.EXPAND, 5)
@@ -730,7 +740,9 @@ class View(wx.Frame):
         self.m_dirpicker = dirpicker
         self.m_treectrl = treectrl
         self.m_auinotebook = auinotebook
-        self.m_auimanager_t = auimanager_t
+        self.m_notebook = notebook
+        
+        #self.m_auimanager_t = auimanager_t
         
         #self.m_np1_button_01 = notebook.panel_01.button_01
         #self.m_active_proj = notebook.panel_01.active_proj
@@ -739,6 +751,10 @@ class View(wx.Frame):
         
         pass
         
+    
+    
+    
+    
     @staticmethod
     def Info(text):
         dial = wx.MessageDialog(None, text, 'Info', wx.OK)
