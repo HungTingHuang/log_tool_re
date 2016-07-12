@@ -18,11 +18,13 @@ from openpyxl.styles import Font, Color
 from openpyxl.styles import colors
 from collections import OrderedDict
 import threading as Thd
-import matplotlib
-
+import matplotlib as mpl
+from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
+from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
 
 class PlotDataPage(wx.Panel):
     def __init__(self, parent, page_name):
+        self.mParent = parent
         self.mPage = wx.Panel(parent, 
                          wx.ID_ANY, 
                          wx.DefaultPosition, 
@@ -30,13 +32,31 @@ class PlotDataPage(wx.Panel):
                          wx.TAB_TRAVERSAL)
         pageSizer = wx.BoxSizer(wx.VERTICAL)
         
+        self.mPlot = mpl.figure.Figure(dpi=None, figsize=(2, 2))
+        self.mCanvas = Canvas(self.mPage, -1, self.mPlot)
+        self.mToolbar = Toolbar(self.mCanvas)
+        self.mToolbar.Realize()
+       
+        self.mFig = self.mPlot.gca()
+        
+        
+        
+        pageSizer.Add(self.mCanvas, 1, wx.EXPAND)
+        pageSizer.Add(self.mToolbar, 0, wx.LEFT | wx.EXPAND)
+        
         
         self.mPage.SetSizer(pageSizer)
         self.mPage.Layout()
-        parent.AddPage(self.mPage, page_name, False)
+        self.mParent.AddPage(self.mPage, page_name, False)
         
         pass
 
+    def DrawXYplot(self, x_axis, y_axis):
+        
+        for row in y_axis:
+            self.mFig.plot(x_axis, row)
+        
+        pass
 
 class ParseDataPage(wx.Panel):
     def __init__(self, parent, page_name):
@@ -230,8 +250,13 @@ class GridDataPage(wx.Panel):
         parent.Bind(wx.EVT_SPIN_DOWN, self.OnSpinDown, self.spinButton)
         parent.Bind(wx.EVT_BUTTON, self.OnExportExcel, exportButton)
         
+        
+        self.SelectedAIOColLabel = list()
         self.mGrid.Bind(wx.grid.EVT_GRID_LABEL_RIGHT_CLICK, self.OnShowPopupMenu)
+        self.mGrid.Bind(wx.grid.EVT_GRID_RANGE_SELECT, self.OnDragSelection)
+        self.mGrid.Bind(wx.grid.EVT_GRID_SELECT_CELL, self.OnSingleSelect)
         #self.mGrid.GetGridWindow().Bind(wx.grid.EVT_GRID_LABEL_RIGHT_CLICK, self.OnShowPopupMenu)
+        
         pass
     
     
@@ -387,28 +412,102 @@ class GridDataPage(wx.Panel):
         
         pass
     
+    
+    def OnSingleSelect(self, evt):
+        cells = self.mGrid.GetSelectedCells()
+        if not cells:
+            if self.mGrid.GetSelectionBlockTopLeft():
+                top_left = self.mGrid.GetSelectionBlockTopLeft()[0]
+                bottom_right = self.mGrid.GetSelectionBlockBottomRight()[0]
+                #print top_left, bottom_right
+            else:
+                pass
+        else:
+            #print cells
+            pass
+        pass
+    
+    
+    def OnDragSelection(self, evt):
+        if not evt.Selecting():
+            temp = self.SelectedAIOColLabel
+            del self.SelectedAIOColLabel[:]
+            self.SelectedAIOColLabel = temp
+            return
+        
+        top_left = evt.GetTopLeftCoords()
+        bottom_right = evt.GetBottomRightCoords()
+        
+        
+        
+        
+        if bottom_right[0] == self.mGrid.GetNumberRows()-1:#col label selected
+            if evt.Selecting():
+                self.SelectedAIOColLabel.append(bottom_right[1])
+               
+            pass
+        
+        pass
+    
+    
     def OnShowPopupMenu(self, evt):
         self.popup_label = evt.GetCol()
-        row_grid_number = self.mGrid.GetNumberRows()
-        col_grid_number = self.mGrid.GetNumberCols()
+        self.popup_menu_title = list()
+       
         
         if not hasattr(self, 'popupID1'):
                 self.popupID1 = wx.NewId()
                 #self.popupID2 = wx.NewId()
                 #self.popupID3 = wx.NewId()
         
+        
+        
+        menu = wx.Menu()
+        
         if evt.GetRow() == -1:#right click col label
-            label_name = self.mGrid.GetColLabelValue(self.popup_label)
-            menu = wx.Menu(title=label_name)
+            if len(self.SelectedAIOColLabel) > 1:#multi select
+                pass
+            else:
+                pass
             
-            # is col ai or ao
-            if 'ai' in str(label_name).lower() or 'ao' in str(label_name).lower():
-                item_plot = wx.MenuItem(menu, self.popupID1, 'plot', '', wx.ITEM_CHECK)
+            for ind in range(len(self.SelectedAIOColLabel)):
+                label_name = str(self.mGrid.GetColLabelValue(self.SelectedAIOColLabel[ind]))
+                if not ('ai' in label_name.lower() or 'ao' in label_name.lower()):
+                    return
+                self.popup_menu_title.append(label_name)
+            
+            menu.SetTitle(str(self.popup_menu_title))
+            item_plot = wx.MenuItem(menu, self.popupID1, 'Draw X-Y plot', '', wx.ITEM_CHECK)
+            menu.AppendItem(item_plot)
+            menu.Bind(wx.EVT_MENU, self.OnXYPlot, item_plot)
+            
+            '''
+            if len(self.SelectedAIOColLabel) > 1:#multi select
+                
+                for ind in range(len(self.SelectedAIOColLabel)):
+                    label_name = str(self.mGrid.GetColLabelValue(self.SelectedAIOColLabel[ind]))
+                    if not ('ai' in label_name.lower() or 'ao' in label_name.lower()):
+                        return
+                    self.popup_menu_title.append(label_name)
+                
+                menu.SetTitle(str(self.popup_menu_title))
+                item_plot = wx.MenuItem(menu, self.popupID1, 'Draw X-Y plot', '', wx.ITEM_CHECK)
                 menu.AppendItem(item_plot)
-                menu.Bind(wx.EVT_MENU, self.OnPlot, item_plot)
+                menu.Bind(wx.EVT_MENU, self.OnXYPlot, item_plot)
             
-            
-            
+            else:
+                label_name = self.mGrid.GetColLabelValue(self.popup_label)
+                self.popup_menu_title = label_name
+                menu.SetTitle(self.popup_menu_title)
+                
+                # is col ai or ao
+                if 'ai' in str(label_name).lower() or 'ao' in str(label_name).lower():
+                    self.SelectedAIOColLabel.append(self.popup_label)
+                    item_plot = wx.MenuItem(menu, self.popupID1, 'Draw X-Y plot', '', wx.ITEM_CHECK)
+                    menu.AppendItem(item_plot)
+                    menu.Bind(wx.EVT_MENU, self.OnXYPlot, item_plot)
+                    pass
+            '''
             pass
         
         if evt.GetCol() == -1:#right click row label
@@ -417,22 +516,63 @@ class GridDataPage(wx.Panel):
         
         
         self.mParent.GetParent().PopupMenu(menu)
-        #menu.Destroy()
+        menu.Destroy()
        
         pass
-
-    def OnPlot(self, evt):
-        print self.popup_label
+    
+    
+    
+    
+    
+    def OnXYPlot(self, evt):
+        #temp = self.popup_menu_title
+        #del self.popup_menu_title
+        #self.popup_menu_title = temp
         
         
+        rows = int(self.mGrid.GetNumberRows())
+        row_aio_data = [[] for _ in range(len(self.SelectedAIOColLabel))]
+        
+        if len(self.SelectedAIOColLabel) > 0:
+            for ind, col in enumerate(self.SelectedAIOColLabel):
+                temp = list()
+                for i in range(rows):
+                    value = self.mGrid.GetCellValue(i, col)
+                    if not value:
+                        value = 0
+                    temp.append(float(value))
+                row_aio_data[ind] = temp
+            
+            pass
+        else:
+            pass
+        
+        '''
+        if len(self.SelectedAIOColLabel) > 1:
+            for col in self.SelectedAIOColLabel:
+                for i in range(rows):
+                    value = self.mGrid.GetCellValue(i, col)
+                    if not value:
+                        value = 0
+                    temp.append(float(value))
+            row_aio_data.append(temp)
+            
+            pass
+        else:
+            
+            for i in range(rows):
+                value = self.mGrid.GetCellValue(i, self.popup_label)
+                if not value:
+                    value = 0
+                temp.append(float(value))
+            
+            row_aio_data.append(temp)
+        '''
+        page_name = 'X-Y Plot: %s'%self.popup_menu_title
+        
+        PlotDataPage(self.mParent, page_name).DrawXYplot(range(rows), row_aio_data)
         
         
-        row_aio_data = list()
-        
-        for i in range(self.mGrid.GetNumberRows()):
-            row_aio_data.append(self.mGrid.GetCellValue(i, self.popup_label))
-        
-        print row_aio_data, len(row_aio_data)
         
         pass
     
@@ -757,12 +897,14 @@ class Controller:
             self.m_view.m_dirpicker.Show()
             self.m_view.m_treectrl.Show()
             self.m_view.m_notebook.Show()
+            self.m_view.m_statusBar.Show()
             self.m_view.Layout()
             self.IsPageMax = False
         elif self.IsPageMax == False:
             self.m_view.m_dirpicker.Hide()
             self.m_view.m_treectrl.Hide()
             self.m_view.m_notebook.Hide()
+            self.m_view.m_statusBar.Hide()
             self.m_view.Layout()
             self.IsPageMax = True
         pass

@@ -742,6 +742,7 @@ class View(wx.Frame):
         self.m_auinotebook = auinotebook
         self.m_notebook = notebook
         
+        
         #self.m_auimanager_t = auimanager_t
         
         #self.m_np1_button_01 = notebook.panel_01.button_01
