@@ -388,27 +388,24 @@ class GridDataPage(wx.Panel):
         pass
     
     def OnShowPopupMenu(self, evt):
-        col_label = evt.GetCol()
-        label_name = self.mGrid.GetColLabelValue(col_label)
+        self.popup_label = evt.GetCol()
         row_grid_number = self.mGrid.GetNumberRows()
         col_grid_number = self.mGrid.GetNumberCols()
-        
         
         if not hasattr(self, 'popupID1'):
                 self.popupID1 = wx.NewId()
                 #self.popupID2 = wx.NewId()
                 #self.popupID3 = wx.NewId()
-             
-        menu = wx.Menu(title=label_name)
-       
         
         if evt.GetRow() == -1:#right click col label
+            label_name = self.mGrid.GetColLabelValue(self.popup_label)
+            menu = wx.Menu(title=label_name)
             
             # is col ai or ao
             if 'ai' in str(label_name).lower() or 'ao' in str(label_name).lower():
                 item_plot = wx.MenuItem(menu, self.popupID1, 'plot', '', wx.ITEM_CHECK)
                 menu.AppendItem(item_plot)
-                menu.Bind(wx.EVT_MENU, self.OnPlot(col_id = col_label), item_plot)
+                menu.Bind(wx.EVT_MENU, self.OnPlot, item_plot)
             
             
             
@@ -424,28 +421,19 @@ class GridDataPage(wx.Panel):
        
         pass
 
-    def OnPlot(self, evt, col_id):
-        print '= ==== ='
-        
-        #menu = target
-        #item_id = menu.FindItem('plot')
-        #item = menu.FindItemById(item_id)
-        #print item.IsChecked()
-        #print item, item_id
-        
-       
-        #print self.mGrid.GetColLabelValue(col)
-        
-        #print 'test', col
+    def OnPlot(self, evt):
+        print self.popup_label
         
         
-        '''
+        
+        
         row_aio_data = list()
         
         for i in range(self.mGrid.GetNumberRows()):
-            row_aio_data.append(self.mGrid.GetCellValue(i, col))
+            row_aio_data.append(self.mGrid.GetCellValue(i, self.popup_label))
+        
         print row_aio_data, len(row_aio_data)
-        '''
+        
         pass
     
     
