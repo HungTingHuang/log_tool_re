@@ -309,6 +309,7 @@ class View(wx.Frame):
                          'FujiQ_iRide',
                          'Zoo_Emmem',
                          'SSM_AOT',
+                         'SSM_xRide',
                          'SSM_Odyssey',
                          'SSM_Trex',
                          'SSM_Balloon']

@@ -18,7 +18,11 @@ from openpyxl.styles import Font, Color
 from openpyxl.styles import colors
 from collections import OrderedDict
 import threading as Thd
+
 import matplotlib as mpl
+mpl.use('WXAgg')
+import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as Canvas
 from matplotlib.backends.backend_wxagg import NavigationToolbar2Wx as Toolbar
 
@@ -32,14 +36,23 @@ class PlotDataPage(wx.Panel):
                          wx.TAB_TRAVERSAL)
         pageSizer = wx.BoxSizer(wx.VERTICAL)
         
-        self.mPlot = mpl.figure.Figure(dpi=None, figsize=(2, 2))
-        self.mCanvas = Canvas(self.mPage, -1, self.mPlot)
+        
+        self.mFig = plt.figure()
+        
+        
+        
+        
+        
+        self.mCanvas = Canvas(self.mPage, -1, self.mFig)
+        self.mCanvas.mpl_connect('motion_notify_event', self.OnMotion)
+    
         self.mToolbar = Toolbar(self.mCanvas)
         self.mToolbar.Realize()
-       
-        self.mFig = self.mPlot.gca()
         
+        mass_txt = wx.StaticText(self.mToolbar, label='x - y', pos=(230, 7), size=(27, 17))
+        mass_txt.SetBackgroundColour("light gray")
         
+        self.mass = wx.TextCtrl(self.mToolbar, pos=(260,4), size=(80, 22), style=wx.TE_READONLY)
         
         pageSizer.Add(self.mCanvas, 1, wx.EXPAND)
         pageSizer.Add(self.mToolbar, 0, wx.LEFT | wx.EXPAND)
@@ -50,11 +63,37 @@ class PlotDataPage(wx.Panel):
         self.mParent.AddPage(self.mPage, page_name, False)
         
         pass
-
-    def DrawXYplot(self, x_axis, y_axis):
+    
+    def OnMotion(self, evt):
         
+        if evt.inaxes:
+            xpos = evt.xdata
+            ypos = evt.ydata
+            self.mass.SetValue('(%d,%d)' % (xpos, ypos))
+
+        pass
+    
+    def DrawXYplot(self, x_axis, y_axis, y_label):
+        #str(y_label[ind])
+        ax = self.mFig.add_subplot(1,1,1)
+        
+        for ind, row in enumerate(y_axis):
+            ax.plot(x_axis, row, 'o-',label=str(y_label[ind]))
+            pass
+       
+         
+        ax.grid(which='both') 
+        ax.legend()
+        
+        pass
+    
+    def DrawDotLine(self, x_axis, y_axis):
+        _x = np.linspace(int(x_axis[:1][0]), int(x_axis[-1:][0]))
+        
+        ax = self.mFig.add_subplot(1,1,1)
         for row in y_axis:
-            self.mFig.plot(x_axis, row)
+            ax.plot(range(len(x_axis)), row, 'yo-')
+        
         
         pass
 
@@ -133,6 +172,7 @@ class GridDataPage(wx.Panel):
         self.mPage.m_data_offset = 0
         self.mPage.m_data_row_limit = grid_row_limit
         #'''
+        self.mPage.timezone = timezone
         
         view.g_progress.SetValue(20)
         self.mPage.m_data = self.m_model.GetRowRangeData(self.mPage.cmd,
@@ -456,9 +496,9 @@ class GridDataPage(wx.Panel):
        
         
         if not hasattr(self, 'popupID1'):
-                self.popupID1 = wx.NewId()
-                #self.popupID2 = wx.NewId()
-                #self.popupID3 = wx.NewId()
+            self.popupID1 = wx.NewId()
+            self.popupID2 = wx.NewId()
+            self.popupID3 = wx.NewId()
         
         
         
@@ -477,10 +517,12 @@ class GridDataPage(wx.Panel):
                 self.popup_menu_title.append(label_name)
             
             menu.SetTitle(str(self.popup_menu_title))
-            item_plot = wx.MenuItem(menu, self.popupID1, 'Draw X-Y plot', '', wx.ITEM_CHECK)
-            menu.AppendItem(item_plot)
-            menu.Bind(wx.EVT_MENU, self.OnXYPlot, item_plot)
-            
+            item_plot_1 = wx.MenuItem(menu, self.popupID1, 'Draw X-Y plot', '', wx.ITEM_CHECK)
+            item_plot_2 = wx.MenuItem(menu, self.popupID2, 'Draw Dot&Line plot', '', wx.ITEM_CHECK)
+            menu.AppendItem(item_plot_1)
+            menu.AppendItem(item_plot_2)
+            menu.Bind(wx.EVT_MENU, self.OnXYPlot, item_plot_1)
+            menu.Bind(wx.EVT_MENU, self.OnDotLine, item_plot_2)
             '''
             if len(self.SelectedAIOColLabel) > 1:#multi select
                 
@@ -521,9 +563,6 @@ class GridDataPage(wx.Panel):
         pass
     
     
-    
-    
-    
     def OnXYPlot(self, evt):
         #temp = self.popup_menu_title
         #del self.popup_menu_title
@@ -532,10 +571,12 @@ class GridDataPage(wx.Panel):
         
         rows = int(self.mGrid.GetNumberRows())
         row_aio_data = [[] for _ in range(len(self.SelectedAIOColLabel))]
+        row_label_data = list()
         
         if len(self.SelectedAIOColLabel) > 0:
             for ind, col in enumerate(self.SelectedAIOColLabel):
                 temp = list()
+                row_label_data.append(str(self.mGrid.GetColLabelValue(col)))
                 for i in range(rows):
                     value = self.mGrid.GetCellValue(i, col)
                     if not value:
@@ -568,15 +609,56 @@ class GridDataPage(wx.Panel):
             
             row_aio_data.append(temp)
         '''
+        
         page_name = 'X-Y Plot: %s'%self.popup_menu_title
         
-        PlotDataPage(self.mParent, page_name).DrawXYplot(range(rows), row_aio_data)
+        PlotDataPage(self.mParent, page_name).DrawXYplot(x_axis=range(rows), 
+                                                         y_axis=row_aio_data,
+                                                         y_label=row_label_data,)
         
         
         
         pass
     
+    def OnDotLine(self, evt):
+        
+        x_axis = list()
+        row_aio_data = [[] for _ in range(len(self.SelectedAIOColLabel))]
+        rows = int(self.mGrid.GetNumberRows())
+        
+        #get timestamp as x_axis
+        label_timestamp = 0
+        if 'timestamp' in str(self.mGrid.GetColLabelValue(label_timestamp)).lower():
+            for i in range(rows):
+                value = self.mGrid.GetCellValue(i, label_timestamp)
+                if not value:
+                    value = 0
+                x_axis.append(float(value))
+            
+            pass
+        
+        if len(self.SelectedAIOColLabel) > 0:
+            for ind, col in enumerate(self.SelectedAIOColLabel):
+                temp = list()
+                for i in range(rows):
+                    value = self.mGrid.GetCellValue(i, col)
+                    if not value:
+                        value = 0
+                    temp.append(float(value))
+                row_aio_data[ind] = temp
+            
+            pass
+        else:
+            pass
     
+       
+        
+        
+        
+        page_name = 'Dot&Line Plot: %s'%self.popup_menu_title
+        
+        PlotDataPage(self.mParent, page_name).DrawDotLine(x_axis, row_aio_data)
+        pass
     
     
 class HugeTableGrid(wx.grid.Grid):

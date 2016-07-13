@@ -1258,7 +1258,7 @@ class LogParse():
         
         
         
-        _t['ms'] = int(ts%1000000)
+        _t['ms'] = int(ts%1000000)*0.000001
         
         
         
