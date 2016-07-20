@@ -5,8 +5,10 @@ import matplotlib
 setup(
     options = {
 		'py2exe': {
+		
 			'packages' :  ['matplotlib', 'pytz'],
-            'dll_excludes': ['libgdk-win32-2.0-0.dll',
+            
+			'dll_excludes': ['libgdk-win32-2.0-0.dll',
 								'libgobject-2.0-0.dll',
 								'libgdk_pixbuf-2.0-0.dll',
 								'libgtk-win32-2.0-0.dll',
@@ -18,9 +20,12 @@ setup(
 								'libglade-2.0-0.dll',
 								'libgmodule-2.0-0.dll',
 								'libgthread-2.0-0.dll',
-								'QtGui4.dll', 'QtCore.dll',
-								'QtCore4.dll'
-                            ], }},
+								'QtGui4.dll', 
+								'QtCore.dll',
+								'QtCore4.dll'],
+			'bundle_files': 1
+					}
+			},
 	data_files= matplotlib.get_py2exe_datafiles(),
     windows = [{'script': 'controller.py'}],
     zipfile = None

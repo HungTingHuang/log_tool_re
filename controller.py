@@ -42,7 +42,11 @@ class PlotDataPage(wx.Panel):
         
         
         
+        #self.mCanvas.BackgroundColour =
+        #self.mCanvas.SetBackgroundColour()
         
+        
+                
         self.mCanvas = Canvas(self.mPage, -1, self.mFig)
         self.mCanvas.mpl_connect('motion_notify_event', self.OnMotion)
     
@@ -304,6 +308,45 @@ class GridDataPage(wx.Panel):
     
     #callback export excel
     def OnExportExcel(self, evt):
+        _parse = model.LogParse()
+        _parse.set_filename(self.mPage.filename)
+        excel_rows_max_limit = 8192
+        _col_offset = 0
+        _row_offset = 0
+        
+        data_total_rows = _parse.find_total_row_number(self.mPage.cmd)
+        print 'Data Total Rows is %d'%data_total_rows
+        
+        
+        
+        if data_total_rows >= excel_rows_max_limit:
+            sheet_count = data_total_rows/excel_rows_max_limit
+            if not data_total_rows % excel_rows_max_limit == 0:
+                sheet_count+=1
+            else:
+                pass
+        else:
+            sheet_count = 1
+            pass
+        
+        
+        _doc = openpyxl.Workbook()
+        _sht_active = _doc.active
+        _data = self.mPage.m_data
+        
+        
+        
+        for row_index, row_data in enumerate(_data):
+            for col_index, value_t in enumerate(row_data):
+                _sht_active.cell(column = _col_offset + col_index + 1,
+                                row= _row_offset + row_index + 1,
+                                value = value_t)
+        
+        _doc.save('sssss.xlsx')
+        View.Info("Process has Done!")
+        pass
+    
+    def OnExportCSV(self, evt):
         view.g_progress.SetValue(0)
         projectName = self.mPage.page_name.partition('.d')[0] 
         #exportFileName = projectName.replace(': ', '_') + '.xlsx'
@@ -380,7 +423,9 @@ class GridDataPage(wx.Panel):
         '''
        
         #self.m_progress.SetValue(int(100))
+        
         pass
+    
     
     def OnSpinUp(self, evt):
         view.g_progress.SetValue(0)
