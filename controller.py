@@ -42,10 +42,6 @@ class PlotDataPage(wx.Panel):
         
         
         
-        #self.mCanvas.BackgroundColour =
-        #self.mCanvas.SetBackgroundColour()
-        
-        
                 
         self.mCanvas = Canvas(self.mPage, -1, self.mFig)
         self.mCanvas.mpl_connect('motion_notify_event', self.OnMotion)
@@ -82,7 +78,7 @@ class PlotDataPage(wx.Panel):
         ax = self.mFig.add_subplot(1,1,1)
         
         for ind, row in enumerate(y_axis):
-            ax.plot(x_axis, row, 'o-',label=str(y_label[ind]))
+            ax.plot(x_axis, row, 'o-', label=str(y_label[ind]))
             pass
        
          
@@ -310,39 +306,74 @@ class GridDataPage(wx.Panel):
     def OnExportExcel(self, evt):
         _parse = model.LogParse()
         _parse.set_filename(self.mPage.filename)
-        excel_rows_max_limit = 8192
+        _excel_rows_max_limit = 16384
+        _excel_offset = 0
         _col_offset = 0
         _row_offset = 0
         
-        data_total_rows = _parse.find_total_row_number(self.mPage.cmd)
-        print 'Data Total Rows is %d'%data_total_rows
+        _data_total_rows = _parse.find_total_row_number(self.mPage.cmd)
+        #print 'Data Total Rows is %d'%_data_total_rows
+        #print self.mPage.page_name
+        _xlax_name = self.mPage.page_name.replace('.db', '.xlsx').replace(' ', '').replace(':', '_')
+        #print _xlax_name
         
-        
-        
-        if data_total_rows >= excel_rows_max_limit:
-            sheet_count = data_total_rows/excel_rows_max_limit
-            if not data_total_rows % excel_rows_max_limit == 0:
-                sheet_count+=1
+        #'''count 
+        if _data_total_rows >= _excel_rows_max_limit:
+            _sheet_count = _data_total_rows/_excel_rows_max_limit
+            if not _data_total_rows % _excel_rows_max_limit == 0:
+                _sheet_count+=1
             else:
                 pass
         else:
-            sheet_count = 1
+            _sheet_count = 1
             pass
-        
+        #'''
         
         _doc = openpyxl.Workbook()
+        _doc.save(_xlax_name)
         _sht_active = _doc.active
-        _data = self.mPage.m_data
+        #_data = self.mPage.m_data
         
-        
-        
+        '''
         for row_index, row_data in enumerate(_data):
             for col_index, value_t in enumerate(row_data):
                 _sht_active.cell(column = _col_offset + col_index + 1,
                                 row= _row_offset + row_index + 1,
                                 value = value_t)
+        #'''
+        #print self.mPage.cmd
+        #'''
         
-        _doc.save('sssss.xlsx')
+        
+        for _sht_index in range(_sheet_count):
+            
+            _doc = openpyxl.load_workbook(_xlax_name)
+            #_sht_active = _doc.active
+            _sht_active.title = str(_sht_index)
+            _sht_active = _doc.create_sheet(title=str(_sht_index))
+            
+            #self.m_model.GetRowRangeData()
+            #get data
+            _data = self.m_model.GetRowRangeData(self.mPage.cmd, _excel_rows_max_limit, _excel_offset)
+            print _data[0]
+            
+            #write to excel
+            for row_index, row_data in enumerate(_data):
+                for col_index, value_t in enumerate(row_data):
+                    _sht_active.cell(column = _col_offset + col_index + 1,
+                                    row= _row_offset + row_index + 1,
+                                    value = value_t)
+            
+            _excel_offset += _excel_rows_max_limit
+            _doc.save(_xlax_name)
+            print _sht_index
+            #_sht_active = _doc.create_sheet()
+            #progress_value += progress_value_offset
+        
+        #'''
+        
+        
+        
         View.Info("Process has Done!")
         pass
     
