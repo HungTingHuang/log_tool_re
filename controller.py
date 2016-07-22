@@ -18,7 +18,7 @@ from openpyxl.styles import Font, Color
 from openpyxl.styles import colors
 from collections import OrderedDict
 import threading as Thd
-
+import time
 import matplotlib as mpl
 mpl.use('WXAgg')
 import matplotlib.pyplot as plt
@@ -303,7 +303,62 @@ class GridDataPage(wx.Panel):
     
     
     #callback export excel
+    
     def OnExportExcel(self, evt):
+        _xlax_name = self.mPage.page_name.replace('.db', '.xlsx').replace(' ', '_').replace(':', '_')
+        _col_offset = 0
+        _row_offset = 0
+        _data = self.mPage.m_data
+        
+        
+        
+        
+        try:
+            _doc = openpyxl.Workbook()
+            #_doc.save(_xlax_name)
+        except:
+            View.Warring("Excel Create Error!")
+            pass
+        
+       
+        
+        #threading.Thread()
+        #_doc = openpyxl.load_workbook(_xlax_name)
+        _sht_active = _doc.active
+        
+        
+        
+        for row_index, row_data in enumerate(_data):
+            _sht_active.append(row_data)
+        
+        
+        '''
+            for col_index, value_t in enumerate(row_data):
+                
+                _sht_active.cell(column= _col_offset + col_index + 1, 
+                                 row= _row_offset + row_index + 1, 
+                                 value = value_t)
+        '''
+                #_sht_active.append(value_t)
+        
+        
+        try:
+            
+            _t =threading.Thread(target= lambda doc, xlax_name: doc.save(xlax_name) , args={_doc, _xlax_name,})
+            _t.start()
+            #_doc.save(_xlax_name)
+            
+            View.Info("Process has Done!")
+        except:
+            View.Warring("Excel Write Error!")
+            pass
+        
+        
+        
+        pass
+    
+    
+    def OnExportBigExcel(self, evt):
         _parse = model.LogParse()
         _parse.set_filename(self.mPage.filename)
         _excel_rows_max_limit = 16384
@@ -331,7 +386,7 @@ class GridDataPage(wx.Panel):
         
         _doc = openpyxl.Workbook()
         _doc.save(_xlax_name)
-        _sht_active = _doc.active
+        
         #_data = self.mPage.m_data
         
         '''
@@ -347,10 +402,11 @@ class GridDataPage(wx.Panel):
         
         for _sht_index in range(_sheet_count):
             
-            _doc = openpyxl.load_workbook(_xlax_name)
+            _doc = openpyxl.load_workbook(_xlax_name, write_only = True)
             #_sht_active = _doc.active
-            _sht_active.title = str(_sht_index)
+            
             _sht_active = _doc.create_sheet(title=str(_sht_index))
+            _sht_active.title = str(_sht_index)
             
             #self.m_model.GetRowRangeData()
             #get data
