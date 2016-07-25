@@ -6,7 +6,7 @@ import wx.lib.agw.aui
 import os
 import view
 import model
-import threading
+
 import sys
 import time
 from wx import SpinButton
@@ -17,7 +17,8 @@ import openpyxl.styles as xl_sty
 from openpyxl.styles import Font, Color
 from openpyxl.styles import colors
 from collections import OrderedDict
-import threading as Thd
+#import threading as Thd
+from model import mThd as Thd
 import time
 import matplotlib as mpl
 mpl.use('WXAgg')
@@ -312,7 +313,7 @@ class GridDataPage(wx.Panel):
         
         
         
-        
+        print "create excel file"
         try:
             _doc = openpyxl.Workbook()
             #_doc.save(_xlax_name)
@@ -327,7 +328,8 @@ class GridDataPage(wx.Panel):
         _sht_active = _doc.active
         
         
-        
+        print _doc
+        print "start write file"
         for row_index, row_data in enumerate(_data):
             _sht_active.append(row_data)
         
@@ -339,16 +341,20 @@ class GridDataPage(wx.Panel):
                                  row= _row_offset + row_index + 1, 
                                  value = value_t)
         '''
-                #_sht_active.append(value_t)
         
         
+        print "start write excel"
         try:
             
-            _t =threading.Thread(target= lambda doc, xlax_name: doc.save(xlax_name) , args={_doc, _xlax_name,})
+            notify = lambda : View.Info("Process has Done!")
+            _func = lambda doc, xlax_name: doc.save(xlax_name)
+            func = map(_func, _doc, _xlax_name)
+            _t = Thd(target= func,
+                    callback= notify)
             _t.start()
             #_doc.save(_xlax_name)
             
-            View.Info("Process has Done!")
+            #View.Info("Process has Done!")
         except:
             View.Warring("Excel Write Error!")
             pass
@@ -1172,6 +1178,9 @@ class Controller:
             self.m_view.m_np1_1f_table.SetItems(tablename)
             self.m_view.m_np1_1f_table.SetSelection(0)
         else:
+            tablename = ['Table Name']
+            self.m_view.m_np1_1f_table.SetItems(tablename)
+            self.m_view.m_np1_1f_table.SetSelection(0)
             pass  
     
     def OnItemCollapsed(self, evt):

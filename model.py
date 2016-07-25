@@ -8,7 +8,7 @@ import wx.grid as gridlib
 #from lib2to3.tests.support import proj_dir
 import scanf as scanner
 import view as View
-import threading
+
 #import Queue as Que
 import multiprocessing as mp
 from multiprocessing import Process as pro, Queue as que, Pool as pool, Manager
@@ -36,6 +36,18 @@ def _pickle_method(m):
 copy_reg.pickle(types.MethodType, _pickle_method)
 
 
+import threading
+
+class mThd(threading.Thread):
+    def __init__(self, target, callback, *args, **kwargs):
+        threading.Thread.__init__(self)
+        self.callback = callback
+        self.target = target
+        
+    def run(self):
+        self.target()
+        self.callback()
+        
 
 
 class LogInfo():
